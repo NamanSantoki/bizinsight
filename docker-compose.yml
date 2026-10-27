@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    container_name: bizinsight-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bizuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bizpassword2026}
+      POSTGRES_DB: ${POSTGRES_DB:-bizinsight}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bizuser -d bizinsight"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: bizinsight-backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://bizuser:bizpassword2026@postgresql:5432/bizinsight
+      SECRET_KEY: ${SECRET_KEY:-bizinsight-production-grade-super-secret-key-2026}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./ml:/app/ml
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: bizinsight-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: bizinsight-ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollamadata:/root/.ollama
+
+volumes:
+  pgdata:
+  ollamadata:
