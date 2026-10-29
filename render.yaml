@@ -43,7 +43,7 @@ services:
         - frontend/**
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://bizinsight-backend.onrender.com/api/v1
+        value: https://bizinsight-backend-0iur.onrender.com/api/v1
     routes:
       - type: rewrite
         source: /*
