@@ -156,3 +156,20 @@ class AuditLog(Base):
     created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", back_populates="audit_logs")
+
+class CompanyProfile(Base):
+    __tablename__ = "company_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_name = Column(String(255), nullable=False)
+    industry_sector = Column(String(100), nullable=False)
+    business_model = Column(String(100), nullable=False)
+    annual_revenue_bracket = Column(String(50), nullable=True)
+    operating_currencies = Column(JSON, nullable=False, default=list)
+    geographic_regions = Column(JSON, nullable=False, default=list)
+    key_macro_sensitivities = Column(JSON, nullable=False, default=list)
+    key_competitors = Column(JSON, nullable=False, default=list)
+    monitored_kpis = Column(JSON, nullable=False, default=list)
+    risk_tolerance = Column(String(50), default="moderate")
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)

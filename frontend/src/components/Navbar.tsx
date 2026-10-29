@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Database, Upload, ShieldCheck, AlertCircle, RefreshCw, 
-  LogOut, Lock, Menu
+  LogOut, Lock, Menu, Building2, Sparkles
 } from 'lucide-react';
-import type { Dataset } from '../services/api';
+import type { Dataset, CompanyProfile } from '../services/api';
 import { apiClient } from '../services/api';
 
 interface NavbarProps {
@@ -16,6 +16,8 @@ interface NavbarProps {
   onLogout: () => void;
   loading?: boolean;
   onToggleSidebar?: () => void;
+  companyProfile?: CompanyProfile | null;
+  onOpenCompanyDNA?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -26,7 +28,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuth,
   onLogout,
-  onToggleSidebar
+  onToggleSidebar,
+  companyProfile,
+  onOpenCompanyDNA
 }) => {
   const [auditStatus, setAuditStatus] = useState<{ status: string; total_records?: number } | null>(null);
   const [verifyingAudit, setVerifyingAudit] = useState(false);
@@ -98,6 +102,32 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right Controls: Ingest Button, Audit Verification Badge, Auth Profile */}
       <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+        {/* Company DNA Profile Indicator */}
+        {onOpenCompanyDNA && (
+          <button
+            onClick={onOpenCompanyDNA}
+            title={companyProfile ? "Edit Enterprise DNA & Risk Profile" : "Configure Corporate DNA & Risk Sensitivities"}
+            className={`hidden md:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shrink-0 ${
+              companyProfile
+                ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+                : 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700 animate-pulse'
+            }`}
+          >
+            {companyProfile ? (
+              <>
+                <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="truncate max-w-[140px]">{companyProfile.organization_name}</span>
+                <span className="text-[10px] text-slate-400 font-normal">({companyProfile.industry_sector.split(' ')[0]})</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span>Setup Company DNA</span>
+              </>
+            )}
+          </button>
+        )}
+
         {/* Upload Button */}
         <label className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 cursor-pointer transition-colors shrink-0">
           <Upload className="w-3.5 h-3.5 shrink-0" />

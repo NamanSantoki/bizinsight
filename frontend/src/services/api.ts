@@ -576,3 +576,34 @@ export interface CostData {
   breakdown_by_tenant: Array<{ tenant: string; spend: number; status: string }>;
   cost_efficiency_rating: string;
 }
+
+export interface CompanyProfile {
+  id?: number;
+  organization_name: string;
+  industry_sector: string;
+  business_model: string;
+  annual_revenue_bracket?: string;
+  operating_currencies: string[];
+  geographic_regions: string[];
+  key_macro_sensitivities: string[];
+  key_competitors: string[];
+  monitored_kpis: string[];
+  risk_tolerance: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TaxonomyItem {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface TaxonomyData {
+  sectors: TaxonomyItem[];
+  business_models: string[];
+  macro_sensitivities: TaxonomyItem[];
+  standard_kpis: TaxonomyItem[];
+  supported_currencies: string[];
+  geographic_regions: string[];
+}

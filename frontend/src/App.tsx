@@ -19,6 +19,8 @@ import { TAB_CONFIG } from './types/navigation';
 import type { TabType } from './types/navigation';
 import { Navbar } from './components/Navbar';
 import { AuthModal } from './components/auth/AuthModal';
+import { CompanyDNAWizard } from './components/company/CompanyDNAWizard';
+import type { CompanyProfile } from './services/api';
 
 import { DataSourcesTab } from './components/tabs/DataSourcesTab';
 import { ContractsGatesTab } from './components/tabs/ContractsGatesTab';
@@ -47,6 +49,24 @@ export default function App() {
   });
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [isCompanyDNAOpen, setIsCompanyDNAOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchCompanyProfile = async () => {
+      try {
+        const res = await apiClient.get<CompanyProfile | null>('/company/profile');
+        if (res.data) {
+          setCompanyProfile(res.data);
+        } else if (currentUser) {
+          setIsCompanyDNAOpen(true);
+        }
+      } catch (err) {
+        console.error('Failed to load company profile:', err);
+      }
+    };
+    fetchCompanyProfile();
+  }, [currentUser]);
 
   // Module state
   const [qualityReport, setQualityReport] = useState<DataQualityReport | null>(null);
@@ -303,6 +323,8 @@ export default function App() {
           }}
           loading={loading}
           onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
+          companyProfile={companyProfile}
+          onOpenCompanyDNA={() => setIsCompanyDNAOpen(true)}
         />
 
         <main className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50/60 min-w-0">
@@ -1551,6 +1573,13 @@ export default function App() {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onLoginSuccess={(user) => setCurrentUser(user)}
+      />
+
+      <CompanyDNAWizard
+        isOpen={isCompanyDNAOpen}
+        onClose={() => setIsCompanyDNAOpen(false)}
+        onSuccess={(profile) => setCompanyProfile(profile)}
+        initialProfile={companyProfile}
       />
     </div>
   );
