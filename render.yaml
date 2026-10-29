@@ -39,6 +39,9 @@ services:
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: ./frontend/dist
     plan: free
+    buildFilter:
+      paths:
+        - frontend/**
     envVars:
       - key: VITE_API_BASE_URL
         value: https://bizinsight-backend.onrender.com/api/v1
