@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Database, Upload, ShieldCheck, AlertCircle, RefreshCw, 
-  LogOut, Lock
+  LogOut, Lock, Menu
 } from 'lucide-react';
 import type { Dataset } from '../services/api';
 import { apiClient } from '../services/api';
@@ -15,6 +15,7 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   loading?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -24,7 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onFileUpload,
   currentUser,
   onOpenAuth,
-  onLogout
+  onLogout,
+  onToggleSidebar
 }) => {
   const [auditStatus, setAuditStatus] = useState<{ status: string; total_records?: number } | null>(null);
   const [verifyingAudit, setVerifyingAudit] = useState(false);
@@ -48,15 +50,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   const selectedDataset = datasets.find(d => d.id === selectedDatasetId);
 
   return (
-    <header className="h-16 shrink-0 bg-white border-b border-slate-200/90 px-6 flex items-center justify-between z-10 shadow-2xs">
-      {/* Left: Active Dataset Selector */}
-      <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200/80 rounded-2xl px-3 py-1.5">
+    <header className="h-16 shrink-0 bg-white border-b border-slate-200/90 px-3 sm:px-6 flex items-center justify-between z-10 shadow-2xs gap-2">
+      {/* Left: Mobile Sidebar Toggle + Dataset Selector */}
+      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0"
+            title="Toggle Navigation Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        <div className="flex items-center space-x-1.5 sm:space-x-2 bg-slate-50 border border-slate-200/80 rounded-2xl px-2.5 sm:px-3 py-1.5 min-w-0">
           <Database className="w-4 h-4 text-blue-600 shrink-0" />
           <select
             value={selectedDatasetId || ''}
             onChange={(e) => onSelectDataset(Number(e.target.value))}
-            className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-2 max-w-xs truncate"
+            className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1 max-w-[130px] xs:max-w-[180px] sm:max-w-xs truncate"
           >
             {datasets.map((d) => (
               <option key={d.id} value={d.id}>
@@ -67,11 +79,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {selectedDataset && (
-          <div className="hidden lg:flex items-center space-x-2 text-[11px] text-slate-400">
+          <div className="hidden xl:flex items-center space-x-2 text-[11px] text-slate-400">
             <span>•</span>
             <span className="font-mono text-slate-500 font-semibold">{selectedDataset.source_type.toUpperCase()}</span>
             <span>•</span>
-            <span>{selectedDataset.column_count} columns</span>
+            <span>{selectedDataset.column_count} cols</span>
             {selectedDataset.file_hash && (
               <>
                 <span>•</span>
@@ -85,11 +97,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Right Controls: Ingest Button, Audit Verification Badge, Auth Profile */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
         {/* Upload Button */}
-        <label className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 cursor-pointer transition-colors">
-          <Upload className="w-3.5 h-3.5" />
-          <span>Ingest Dataset</span>
+        <label className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 cursor-pointer transition-colors shrink-0">
+          <Upload className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">Ingest Dataset</span>
+          <span className="sm:hidden text-[11px]">Ingest</span>
           <input
             type="file"
             accept=".csv,.xlsx,.xls,.txt"
@@ -103,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={verifyAuditChain}
           disabled={verifyingAudit}
           title="Click to re-verify cryptographic SHA-256 blockchain audit logs"
-          className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition-all ${
+          className={`flex items-center space-x-1 sm:space-x-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition-all shrink-0 ${
             auditStatus?.status === 'valid'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
               : auditStatus?.status === 'compromised' || auditStatus?.status === 'tampered'
@@ -112,28 +125,28 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           {verifyingAudit ? (
-            <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-500" />
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-500 shrink-0" />
           ) : auditStatus?.status === 'valid' ? (
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           ) : (
-            <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+            <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
           )}
-          <span className="hidden sm:inline">
-            {verifyingAudit ? 'Verifying Chain...' : auditStatus?.status === 'valid' ? 'Audit Chain Verified' : 'Audit Chain Check'}
+          <span className="hidden md:inline">
+            {verifyingAudit ? 'Verifying Chain...' : auditStatus?.status === 'valid' ? 'Audit Verified' : 'Audit Check'}
           </span>
         </button>
 
         {/* User Identity / Role Pill */}
         {currentUser ? (
-          <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 pl-1 sm:pl-2 border-l border-slate-200 shrink-0">
             <div className="text-right hidden sm:block">
-              <div className="text-xs font-bold text-slate-800">{currentUser.username}</div>
+              <div className="text-xs font-bold text-slate-800 leading-tight">{currentUser.username}</div>
               <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">{currentUser.role}</div>
             </div>
             <button
               onClick={onLogout}
               title="Sign Out"
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors shrink-0"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -141,10 +154,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         ) : (
           <button
             onClick={onOpenAuth}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-all shadow-xs"
+            className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0"
           >
             <Lock className="w-3.5 h-3.5" />
-            <span>Sign In</span>
+            <span className="hidden xs:inline">Sign In</span>
           </button>
         )}
       </div>

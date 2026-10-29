@@ -46,6 +46,7 @@ export default function App() {
     }
   });
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   // Module state
   const [qualityReport, setQualityReport] = useState<DataQualityReport | null>(null);
@@ -279,10 +280,15 @@ export default function App() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 text-slate-800" style={{ fontFamily: "var(--font-sans)" }}>
       {/* ═══════════════════════════════ SIDEBAR ═══════════════════════════════ */}
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* ═══════════════════════════ MAIN VIEWPORT ═══════════════════════════ */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         <Navbar
           datasets={datasets}
           selectedDatasetId={selectedDatasetId}
@@ -296,68 +302,72 @@ export default function App() {
             setCurrentUser(null);
           }}
           loading={loading}
+          onToggleSidebar={() => setIsSidebarOpen(prev => !prev)}
         />
 
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50/60">
+        <main className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50/60 min-w-0">
         {/* ─── Top Industry Standard Header with 1-Click PDF Export ─── */}
-        <header className="h-16 px-6 bg-white/95 backdrop-blur border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-xs z-10">
-          <div className="flex items-center space-x-3 min-w-0">
+        <header className="px-3 sm:px-6 py-2.5 min-h-14 sm:h-16 bg-white/95 backdrop-blur border-b border-slate-200/80 flex items-center justify-between shrink-0 shadow-xs z-10 gap-2">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
             {activeTabConfig && (
               <div 
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-xs shrink-0" 
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center text-white shadow-xs shrink-0" 
                 style={{ backgroundColor: activeTabConfig.color }}
               >
-                <activeTabConfig.icon className="w-4 h-4" />
+                <activeTabConfig.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             )}
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-sm font-bold text-slate-900 m-0 tracking-tight">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <h2 className="text-xs sm:text-sm font-bold text-slate-900 m-0 tracking-tight truncate">
                   {activeTabConfig?.label || activeTab}
                 </h2>
                 {activeTabConfig?.badge && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60 uppercase">
+                  <span className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60 uppercase shrink-0">
                     {activeTabConfig.badge}
                   </span>
                 )}
               </div>
               {selectedDataset && (
-                <p className="text-[11px] text-slate-500 font-medium m-0 flex items-center space-x-1.5 truncate">
-                  <span>Source:</span>
-                  <span className="font-semibold text-slate-700">{selectedDataset.name}</span>
-                  <span>·</span>
-                  <span className="font-mono">{selectedDataset.row_count.toLocaleString()} rows</span>
-                  <span>·</span>
-                  <span className="font-mono">{selectedDataset.column_count} columns</span>
+                <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium m-0 flex items-center space-x-1 truncate">
+                  <span className="hidden xs:inline">Source:</span>
+                  <span className="font-semibold text-slate-700 truncate">{selectedDataset.name}</span>
+                  <span className="hidden sm:inline">·</span>
+                  <span className="font-mono hidden sm:inline">{selectedDataset.row_count.toLocaleString()} rows</span>
+                  <span className="hidden md:inline">·</span>
+                  <span className="font-mono hidden md:inline">{selectedDataset.column_count} cols</span>
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
             {/* 1-Click Executive PDF Export Button */}
             <button
               onClick={handleExportPdf}
               disabled={isExportingPdf || !selectedDatasetId}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
               title="Download Regulatory Governance Audit Dossier (PDF)"
             >
-              <Download className={`w-3.5 h-3.5 ${isExportingPdf ? 'animate-bounce' : ''}`} />
-              <span className="hidden sm:inline">{isExportingPdf ? 'Generating...' : 'Export Audit Dossier (PDF)'}</span>
+              <Download className={`w-3.5 h-3.5 shrink-0 ${isExportingPdf ? 'animate-bounce' : ''}`} />
+              <span className="hidden xs:inline">
+                {isExportingPdf ? 'Exporting...' : 'Export PDF'}
+              </span>
+              <span className="hidden lg:inline">{isExportingPdf ? '' : ' Dossier'}</span>
             </button>
 
             {loading && (
-              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-amber-700 text-xs font-medium">
+              <div className="hidden xs:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-amber-700 text-xs font-medium shrink-0">
                 <Clock className="w-3.5 h-3.5 animate-spin" />
-                <span>Computing...</span>
+                <span className="hidden sm:inline">Computing...</span>
               </div>
             )}
             <button 
               onClick={() => selectedDatasetId && loadTabData(activeTab, selectedDatasetId)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 text-xs font-semibold shadow-xs transition-all cursor-pointer"
+              className="flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 text-xs font-semibold shadow-xs transition-all cursor-pointer shrink-0"
               title="Refresh Data"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
