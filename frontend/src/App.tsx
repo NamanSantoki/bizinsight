@@ -30,6 +30,7 @@ import { DigitalTwinTab } from './components/tabs/DigitalTwinTab';
 import { MLOpsRegistryTab } from './components/tabs/MLOpsRegistryTab';
 import { GovernanceABACTab } from './components/tabs/GovernanceABACTab';
 import { OperationsCenterTab } from './components/tabs/OperationsCenterTab';
+import { MarketRadarTab } from './components/tabs/MarketRadarTab';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -1565,6 +1566,7 @@ export default function App() {
           {activeTab === 'mlops_registry' && <MLOpsRegistryTab />}
           {activeTab === 'governance_abac' && <GovernanceABACTab datasetId={selectedDatasetId} />}
           {activeTab === 'operations_center' && <OperationsCenterTab />}
+          {activeTab === 'market_radar' && <MarketRadarTab onOpenCompanyDNA={() => setIsCompanyDNAOpen(true)} />}
         </div>
       </main>
       </div>

@@ -17,6 +17,7 @@ export type TabType =
   | 'anomalies' 
   | 'segmentation' 
   | 'causal' 
+  | 'market_radar'
   | 'stress_drift'
   | 'digital_twin'
   | 'goal_seek' 
@@ -56,6 +57,7 @@ export const TAB_CONFIG: TabItem[] = [
   { id: 'segmentation', label: 'Customer Segments', icon: Users, color: '#d97706', badge: 'RFM', section: 'AI & ML' },
 
   // Decision Intelligence
+  { id: 'market_radar', label: 'Autonomous Market Radar', icon: Radio, color: '#f59e0b', badge: 'Causal AI', section: 'Decision Intelligence' },
   { id: 'digital_twin', label: 'Digital Twin Scenario Sim', icon: Sliders, color: '#ec4899', badge: 'What-If', section: 'Decision Intelligence' },
   { id: 'goal_seek', label: 'Prescriptive Goal-Seek', icon: Target, color: '#ea580c', badge: 'Convex', section: 'Decision Intelligence' },
   { id: 'causal', label: 'Econometric Causal Engine', icon: GitFork, color: '#db2777', badge: 'DML / IPW', section: 'Decision Intelligence' },

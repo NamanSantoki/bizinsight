@@ -17,6 +17,7 @@ from backend.app.api.ml_router import router as ml_router
 from backend.app.api.enterprise_router import router as enterprise_router
 from backend.app.api.connectors_router import router as connectors_router
 from backend.app.api.company_router import router as company_router
+from backend.app.api.market_radar_router import router as market_radar_router
 from backend.app.observability.metrics_exporter import PrometheusMetricsMiddleware, get_prometheus_metrics_payload
 from backend.app.observability.probes import health_probes
 from backend.app.models.all_models import User
@@ -170,3 +171,4 @@ app.include_router(ml_router, prefix=settings.API_V1_STR)
 app.include_router(enterprise_router, prefix=settings.API_V1_STR)
 app.include_router(connectors_router, prefix=settings.API_V1_STR)
 app.include_router(company_router, prefix=settings.API_V1_STR)
+app.include_router(market_radar_router, prefix=settings.API_V1_STR)

@@ -173,3 +173,48 @@ class CompanyProfile(Base):
     risk_tolerance = Column(String(50), default="moderate")
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
+
+    assessments = relationship("CausalImpactAssessment", back_populates="company")
+
+class MarketSignalEvent(Base):
+    __tablename__ = "market_signals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    signal_id = Column(String(100), unique=True, index=True, nullable=False)
+    source = Column(String(100), nullable=False) # e.g. FRED, EIA_CRUDE, BALTIC_FREIGHT, BLS_CPI
+    factor_key = Column(String(100), index=True, nullable=False) # crude_oil, freight_rates, interest_rates, etc.
+    headline = Column(String(255), nullable=False)
+    event_summary = Column(Text, nullable=False)
+    magnitude_pct = Column(Float, nullable=False) # e.g. +7.4%
+    shock_direction = Column(String(50), nullable=False) # surge, drop, volatility_spike
+    confidence_score = Column(Float, default=0.92, nullable=False)
+    raw_indicators = Column(JSON, nullable=True) # Underlying telemetry metrics
+    detected_at = Column(DateTime, default=utc_now, nullable=False)
+
+    assessments = relationship("CausalImpactAssessment", back_populates="signal", cascade="all, delete-orphan")
+
+class CausalImpactAssessment(Base):
+    __tablename__ = "causal_impact_assessments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    signal_id = Column(Integer, ForeignKey("market_signals.id"), nullable=False)
+    company_profile_id = Column(Integer, ForeignKey("company_profiles.id"), nullable=False)
+    
+    affected_kpi = Column(String(100), nullable=False) # gross_margin, inventory_turnover, etc.
+    projected_impact_pct = Column(Float, nullable=False) # e.g. -2.3%
+    impact_direction = Column(String(50), nullable=False) # negative, positive, neutral
+    time_to_impact_days_min = Column(Integer, nullable=False) # e.g. 14
+    time_to_impact_days_max = Column(Integer, nullable=False) # e.g. 28
+    
+    transmission_mechanism = Column(Text, nullable=False) # Explains the causal chain
+    prescribed_actions = Column(JSON, nullable=False) # Actionable steps
+    action_priority = Column(String(50), default="P1_HIGH", nullable=False) # P0_CRITICAL, P1_HIGH, P2_MEDIUM
+    hedging_strategy = Column(Text, nullable=True)
+    
+    is_acknowledged = Column(Boolean, default=False, nullable=False)
+    acknowledged_by = Column(String(100), nullable=True)
+    acknowledged_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+
+    signal = relationship("MarketSignalEvent", back_populates="assessments")
+    company = relationship("CompanyProfile", back_populates="assessments")
