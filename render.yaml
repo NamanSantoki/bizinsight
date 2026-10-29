@@ -2,7 +2,7 @@ services:
   # ─── Backend (FastAPI) ───────────────────────────────────────────────────────
   - type: web
     name: bizinsight-backend
-    runtime: docker
+    runtime: image
     image:
       url: docker.io/naman1267/bizinsight-backend:latest
     plan: free
