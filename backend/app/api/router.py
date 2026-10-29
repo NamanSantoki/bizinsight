@@ -36,19 +36,40 @@ from backend.app.security.auth import get_current_user_optional, get_current_act
 
 router = APIRouter()
 
-# Helper to load dataset dataframe
+# Helper to load dataset dataframe with database fallback resilience
 def load_dataset_dataframe(dataset: Dataset) -> pd.DataFrame:
     file_path = dataset.processed_file_path or dataset.raw_file_path
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Dataset physical file not found on disk.")
-    
-    ext = os.path.splitext(file_path)[1].lower()
-    if ext in [".csv", ".txt"]:
-        return pd.read_csv(file_path, low_memory=False)
-    elif ext in [".xlsx", ".xls"]:
-        return pd.read_excel(file_path)
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported stored format.")
+    if file_path and os.path.exists(file_path):
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext in [".csv", ".txt"]:
+            return pd.read_csv(file_path, low_memory=False)
+        elif ext in [".xlsx", ".xls"]:
+            return pd.read_excel(file_path)
+
+    # Resilient Fallback 1: Query persistent PostgreSQL table
+    if dataset.storage_table_name:
+        try:
+            df = pd.read_sql_query(f'SELECT * FROM "{dataset.storage_table_name}"', con=engine)
+            if not df.empty:
+                # Re-cache to disk for fast subsequent file operations
+                if file_path:
+                    try:
+                        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                        df.to_csv(file_path, index=False)
+                    except Exception:
+                        pass
+                return df
+        except Exception as e:
+            print(f"Warning: Failed to load from SQL storage table: {e}")
+
+    # Resilient Fallback 2: Check in SAMPLES_DIR
+    if dataset.name:
+        for sample_name in [dataset.name, f"{dataset.name}.csv", os.path.basename(dataset.name)]:
+            sample_path = os.path.join(settings.SAMPLES_DIR, sample_name)
+            if os.path.exists(sample_path):
+                return pd.read_csv(sample_path, low_memory=False)
+
+    raise HTTPException(status_code=404, detail="Dataset physical file not found on disk or database.")
 
 # 1. Dataset Upload & Ingestion
 @router.post("/datasets/upload", response_model=DatasetResponse)
@@ -168,7 +189,7 @@ def run_cleaning(dataset_id: int, req: CleaningRequest, db: Session = Depends(ge
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
 
-    raw_df = pd.read_csv(dataset.raw_file_path) if dataset.raw_file_path.endswith('.csv') else pd.read_excel(dataset.raw_file_path)
+    raw_df = load_dataset_dataframe(dataset)
     
     cleaned_df, cleaning_logs = clean_dataset(
         raw_df,
