@@ -144,16 +144,43 @@ docker-compose up --build
 
 ## 4. Test Suite Execution
 
-Run the complete 39-test enterprise test suite:
+Run the complete 42-test enterprise test suite:
 ```bash
 python -m pytest backend/tests -v
 ```
 
 ### Verified Test Categories:
 - **Enterprise Data Platform**: Data source connectors, health pings, sync runs, contract validation rules, quarantine logic, 6-dimension quality gates, and lineage DAG graph traversals.
+- **Enterprise Connectors & CDC**: Automated ingestion schedules, periodic sync triggers, and enterprise API key generation/revocation with prefix masking (`test_enterprise_connectors.py`).
+- **Observability & SRE Metrics**: Live Prometheus `/metrics` endpoint with RED metrics, latency histograms, error budget burn rates, and health gauges (`test_metrics_observability.py`).
 - **Semantic Layer**: Central metrics resolution, dimensional slicing, and SQL compilation with zero-hallucination validation.
 - **Governance & Security**: ABAC policy evaluation, dynamic row filtering, column PII masking, 4-tier automated data classification, dual-person approvals, and expirable export tokens.
 - **MLOps Platform**: Model registry version transitions ($v_1 \dots v_7$), population stability index drift detection, and automated retraining flags.
 - **Decision Intelligence**: Digital twin scenario simulations with 80% prediction intervals, convex prescriptive goal-seek optimization, and econometric causal refutation tests.
 - **Observability**: Standard Kubernetes probes (`/health/live`, `/health/ready`, `/health/database`, `/health/ml`), telemetry percentiles, cost attribution, and incident triage.
 - **Core Security & Integrity**: Salted PBKDF2 hashing, zero-trust JWT authentication, SQL injection guards, system table overwrite protection, and SHA-256 cryptographic audit chain tamper detection.
+
+---
+
+## 5. Enterprise Connectors & Observability Guide
+
+### Enterprise Connectors API
+- **List Schedules**: `GET /api/v1/enterprise-connectors/schedules`
+- **Trigger Scheduled Sync**: `POST /api/v1/enterprise-connectors/schedules/{task_id}/run`
+- **Create Enterprise API Key**: `POST /api/v1/enterprise-connectors/api-keys`
+- **List API Keys (Masked)**: `GET /api/v1/enterprise-connectors/api-keys`
+- **Revoke API Key**: `DELETE /api/v1/enterprise-connectors/api-keys/{key_id}`
+- **Dispatch Slack Alert**: `POST /api/v1/enterprise-connectors/alerts/slack`
+- **Dispatch Webhook Alert**: `POST /api/v1/enterprise-connectors/alerts/webhook`
+
+### Prometheus Telemetry & Grafana Dashboard
+- **Prometheus Metrics**: `GET /metrics` exposes request rates, latency quantiles ($P_{50}, P_{95}, P_{99}$), and SRE error budget metrics.
+- **Grafana Dashboard**: Import `deploy/grafana/bizinsight-dashboard.json` into Grafana to monitor system throughput, error budgets, and data quality degradation in real-time.
+
+---
+
+## 6. Cloud Deployment (Render)
+- **Frontend App**: `https://bizinsight-frontend.onrender.com`
+- **Backend API & Swagger Docs**: `https://bizinsight-backend-0iur.onrender.com/docs`
+- **Health Probe**: `https://bizinsight-backend-0iur.onrender.com/api/v1/health`
+- **Prometheus Metrics**: `https://bizinsight-backend-0iur.onrender.com/metrics`
