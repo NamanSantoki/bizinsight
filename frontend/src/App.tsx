@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
 import { 
   ShieldAlert, CheckCircle2, AlertTriangle, 
-  RefreshCw, Clock, Sparkles, Download
+  RefreshCw, Clock, Sparkles, Download,
+  TrendingUp, ShieldCheck
 } from 'lucide-react';
 import { apiClient } from './services/api';
 import type { 
@@ -31,6 +32,7 @@ import { MLOpsRegistryTab } from './components/tabs/MLOpsRegistryTab';
 import { GovernanceABACTab } from './components/tabs/GovernanceABACTab';
 import { OperationsCenterTab } from './components/tabs/OperationsCenterTab';
 import { MarketRadarTab } from './components/tabs/MarketRadarTab';
+import { ExploratoryAnalyticsTab } from './components/tabs/ExploratoryAnalyticsTab';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -411,6 +413,7 @@ export default function App() {
           {/* ═══════════════ TAB: OVERVIEW & KPIS ═══════════════ */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
+              {/* Executive Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {kpiData && Object.entries(kpiData.cards).map(([key, card]) => (
                   <div key={key} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
@@ -418,9 +421,11 @@ export default function App() {
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{card.label}</span>
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     </div>
-                    <div className="text-2xl font-black font-mono text-slate-900 tracking-tight">{card.formatted}</div>
+                    <div className="text-2xl font-black font-mono text-slate-900 tracking-tight" title={card.formatted}>
+                      {card.compact || card.formatted}
+                    </div>
                     <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-                      <span>Live Computed Metric</span>
+                      <span>{card.subtitle || 'Live Computed Metric'}</span>
                       <span className="font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 font-mono">
                         Optimal
                       </span>
@@ -429,11 +434,15 @@ export default function App() {
                 ))}
               </div>
 
+              {/* Aggregate Trajectory Chart */}
               {kpiData && kpiData.trends.length > 0 && (
                 <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900 m-0">Aggregate Historical Trajectory</h3>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        <h3 className="text-sm font-bold text-slate-900 m-0">Aggregate Historical Trajectory</h3>
+                      </div>
                       <p className="text-xs text-slate-500 mt-0.5">Chronologically ordered progression across dataset intervals</p>
                     </div>
                     <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 self-start sm:self-auto font-mono">
@@ -445,14 +454,20 @@ export default function App() {
                       <AreaChart data={kpiData.trends}>
                         <defs>
                           <linearGradient id="colorValLight" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
+                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.25}/>
                             <stop offset="95%" stopColor="#2563eb" stopOpacity={0.0}/>
                           </linearGradient>
                         </defs>
                         <CartesianGrid {...chartGrid} />
                         <XAxis dataKey="period" {...chartAxis} />
-                        <YAxis {...chartAxis} />
-                        <Tooltip contentStyle={chartTooltipStyle} />
+                        <YAxis 
+                          {...chartAxis}
+                          tickFormatter={(v) => v >= 1e12 ? `${(v/1e12).toFixed(1)}T` : v >= 1e9 ? `${(v/1e9).toFixed(1)}B` : v >= 1e6 ? `${(v/1e6).toFixed(1)}M` : v >= 1e3 ? `${(v/1e3).toFixed(1)}K` : String(v)}
+                        />
+                        <Tooltip 
+                          contentStyle={chartTooltipStyle}
+                          formatter={(val: any) => [typeof val === 'number' ? val.toLocaleString() : val, kpiData.primary_metric || 'Value']}
+                        />
                         <Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#colorValLight)" dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -460,37 +475,124 @@ export default function App() {
                 </div>
               )}
 
-              {kpiData && kpiData.breakdowns.regions && (
+              {/* Dual Visual Distribution & Regional Breakdown */}
+              {kpiData && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Card: Regional or Dimensional Distribution */}
                   <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">Regional Distribution</h3>
-                    <p className="text-xs text-slate-500 mb-4">Metric aggregation partitioned by regional geography</p>
-                    <div className="h-52">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-sm font-bold text-slate-900 m-0">
+                        {kpiData.breakdowns.regions && kpiData.breakdowns.regions.length > 0 ? 'Geographic / Regional Distribution' : 'Categorical Distribution'}
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        TOP 10
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-4">Metric aggregation partitioned by top dimensional entities</p>
+                    <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={kpiData.breakdowns.regions}>
+                        <BarChart data={(kpiData.breakdowns.regions && kpiData.breakdowns.regions.length > 0) ? kpiData.breakdowns.regions : (kpiData.breakdowns.categories || [])}>
                           <CartesianGrid {...chartGrid} />
-                          <XAxis dataKey="name" {...chartAxis} />
-                          <YAxis {...chartAxis} />
-                          <Tooltip contentStyle={chartTooltipStyle} />
-                          <Bar dataKey="value" fill="#2563eb" radius={[8, 8, 0, 0]} />
+                          <XAxis 
+                            dataKey="name" 
+                            {...chartAxis} 
+                            tick={{ fontSize: 9, fill: '#64748b' }} 
+                            interval={0}
+                            angle={-20}
+                            textAnchor="end"
+                            height={45}
+                          />
+                          <YAxis 
+                            {...chartAxis}
+                            tickFormatter={(v) => v >= 1e12 ? `${(v/1e12).toFixed(1)}T` : v >= 1e9 ? `${(v/1e9).toFixed(1)}B` : v >= 1e6 ? `${(v/1e6).toFixed(1)}M` : v >= 1e3 ? `${(v/1e3).toFixed(1)}K` : String(v)}
+                          />
+                          <Tooltip 
+                            contentStyle={chartTooltipStyle}
+                            formatter={(val: any) => [typeof val === 'number' ? val.toLocaleString() : val, kpiData.primary_metric || 'Volume']}
+                          />
+                          <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
+
+                  {/* Right Card: Metric Density Bins or Category Breakdown */}
                   <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
-                    <h3 className="text-sm font-bold text-slate-900 mb-1">Category Distribution</h3>
-                    <p className="text-xs text-slate-500 mb-4">Metric aggregation partitioned by core operational categories</p>
-                    <div className="h-52">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={kpiData.breakdowns.categories || []}>
-                          <CartesianGrid {...chartGrid} />
-                          <XAxis dataKey="name" {...chartAxis} />
-                          <YAxis {...chartAxis} />
-                          <Tooltip contentStyle={chartTooltipStyle} />
-                          <Bar dataKey="value" fill="#0284c7" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="text-sm font-bold text-slate-900 m-0">
+                        {kpiData.distribution && kpiData.distribution.length > 0 ? 'Value Dispersion & Frequency Bins' : 'Category Partitioning'}
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        HISTOGRAM
+                      </span>
                     </div>
+                    <p className="text-xs text-slate-500 mb-4">Statistical spread of observations across numeric tiers</p>
+                    <div className="h-56">
+                      {kpiData.distribution && kpiData.distribution.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={kpiData.distribution}>
+                            <CartesianGrid {...chartGrid} />
+                            <XAxis 
+                              dataKey="bin" 
+                              {...chartAxis} 
+                              tick={{ fontSize: 9, fill: '#64748b' }}
+                              angle={-15}
+                              textAnchor="end"
+                              height={45}
+                            />
+                            <YAxis {...chartAxis} />
+                            <Tooltip 
+                              contentStyle={chartTooltipStyle}
+                              formatter={(val: any) => [`${typeof val === 'number' ? val.toLocaleString() : val} observations`, 'Count']}
+                            />
+                            <Bar dataKey="count" fill="#0284c7" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={kpiData.breakdowns.categories || []}>
+                            <CartesianGrid {...chartGrid} />
+                            <XAxis 
+                              dataKey="name" 
+                              {...chartAxis} 
+                              tick={{ fontSize: 9, fill: '#64748b' }}
+                              angle={-15}
+                              textAnchor="end"
+                              height={45}
+                            />
+                            <YAxis {...chartAxis} />
+                            <Tooltip contentStyle={chartTooltipStyle} />
+                            <Bar dataKey="value" fill="#0284c7" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Executive Strategic Health & Concentration Dossier */}
+              {kpiData && kpiData.concentration && (
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-300">Executive Strategic Briefing</span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-100 m-0">{kpiData.concentration.description}</p>
+                    <p className="text-xs text-slate-400 m-0">High concentration detected: consider risk diversification or targeted segmentation.</p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10 text-center">
+                      <div className="text-[10px] text-indigo-200 uppercase font-bold">Top 20% Share</div>
+                      <div className="text-lg font-black font-mono text-emerald-400">{kpiData.concentration.top_share_pct}%</div>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('analytics')}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-xs flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      Deep Dive Analytics &rarr;
+                    </button>
                   </div>
                 </div>
               )}
@@ -1518,44 +1620,11 @@ export default function App() {
 
           {/* ═══════════════ TAB: EXPLORATORY ANALYSIS ═══════════════ */}
           {activeTab === 'analytics' && (
-            <div className="space-y-6">
-              {kpiData && (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {Object.entries(kpiData.cards).map(([key, card]) => (
-                      <div key={key} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{card.label}</span>
-                        <div className="text-2xl font-black font-mono text-slate-900 mt-1">{card.formatted}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {kpiData.trends.length > 0 && (
-                    <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
-                      <h3 className="text-sm font-bold text-slate-900 mb-1">Exploratory Sequential Variance</h3>
-                      <p className="text-xs text-slate-500 mb-4">Metric progression across detected time indices</p>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={kpiData.trends}>
-                            <defs>
-                              <linearGradient id="colorValAltLight" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#0284c7" stopOpacity={0.2}/>
-                                <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid {...chartGrid} />
-                            <XAxis dataKey="period" {...chartAxis} />
-                            <YAxis {...chartAxis} />
-                            <Tooltip contentStyle={chartTooltipStyle} />
-                            <Area type="monotone" dataKey="value" stroke="#0284c7" strokeWidth={2.5} fillOpacity={1} fill="url(#colorValAltLight)" dot={false} />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            <ExploratoryAnalyticsTab
+              kpiData={kpiData}
+              datasetName={datasets.find(d => d.id === selectedDatasetId)?.name}
+              onRefresh={() => selectedDatasetId && loadTabData('analytics', selectedDatasetId)}
+            />
           )}
           {/* ═══════════════ ENTERPRISE 2.0 PLATFORM TABS ═══════════════ */}
           {activeTab === 'data_sources' && <DataSourcesTab />}

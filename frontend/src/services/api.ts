@@ -76,18 +76,61 @@ export interface DataQualityReport {
   created_at: string;
 }
 
+export interface DistributionBin {
+  bin: string;
+  count: number;
+  pct: number;
+}
+
+export interface SummaryStat {
+  mean: number;
+  std: number;
+  min: number;
+  q25: number;
+  median: number;
+  q75: number;
+  max: number;
+  sum: number;
+  missing_pct: number;
+  formatted_mean: string;
+  formatted_total: string;
+}
+
+export interface ColumnMeta {
+  name: string;
+  dtype: string;
+  semantic_type: 'numeric' | 'temporal' | 'categorical' | 'text';
+  unique_count: number;
+  missing_count: number;
+  missing_pct: number;
+}
+
 export interface KPIResult {
   dataset_rows: number;
   available_columns: string[];
   primary_metric?: string;
   quantity_metric?: string;
   date_metric?: string;
-  cards: Record<string, { label: string; value: number; formatted: string }>;
-  trends: Array<{ period: string; value: number; count: number }>;
+  cards: Record<string, { 
+    label: string; 
+    value: number; 
+    formatted: string; 
+    compact?: string;
+    subtitle?: string;
+  }>;
+  trends: Array<{ period: string; value: number; count: number; mean?: number }>;
   breakdowns: {
-    products?: Array<{ name: string; value: number }>;
-    regions?: Array<{ name: string; value: number }>;
-    categories?: Array<{ name: string; value: number }>;
+    products?: Array<{ name: string; value: number; share_pct?: number }>;
+    regions?: Array<{ name: string; value: number; share_pct?: number }>;
+    categories?: Array<{ name: string; value: number; share_pct?: number }>;
+  };
+  distribution?: DistributionBin[];
+  summary_stats?: Record<string, SummaryStat>;
+  column_metadata?: ColumnMeta[];
+  sample_records?: Array<Record<string, any>>;
+  concentration?: {
+    top_share_pct: number;
+    description: string;
   };
 }
 
