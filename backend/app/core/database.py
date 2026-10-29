@@ -4,9 +4,12 @@ from backend.app.core.config import settings
 
 # Render provides DATABASE_URL with 'postgres://' scheme,
 # but SQLAlchemy 2.x requires 'postgresql://'
+# Also force psycopg2 driver (we have psycopg2-binary, not psycopg v3)
 database_url = settings.DATABASE_URL
 if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+    database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 # Configure engine with appropriate pooling and thread checking for sqlite vs postgres
 connect_args = {}
