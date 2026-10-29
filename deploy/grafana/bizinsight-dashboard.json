@@ -1,0 +1,87 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "BIZINSIGHT Enterprise SRE & SLI/SLO Telemetry",
+      "type": "row"
+    },
+    {
+      "title": "API Request Rate (RPS by Status)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(bizinsight_http_requests_total[1m])) by (status)",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "title": "P95 / P99 API Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(bizinsight_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95 Latency"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(bizinsight_http_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P99 Latency"
+        }
+      ]
+    },
+    {
+      "title": "Error Budget Remaining (%)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 9 },
+      "targets": [
+        {
+          "expr": "bizinsight_sre_error_budget_remaining_percent"
+        }
+      ]
+    },
+    {
+      "title": "Active Data Ingestion Pipelines",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 9 },
+      "targets": [
+        {
+          "expr": "bizinsight_active_ingestion_jobs"
+        }
+      ]
+    },
+    {
+      "title": "Enterprise Datasets Tracked",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 9 },
+      "targets": [
+        {
+          "expr": "bizinsight_datasets_tracked_total"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["bizinsight", "sre", "production"],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "title": "BIZINSIGHT Production Operations & SRE Dashboard",
+  "uid": "bizinsight-prod-sre"
+}
+

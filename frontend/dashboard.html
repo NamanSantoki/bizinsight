@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIZINSIGHT Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <!-- Chart.js CDN for dynamic charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="glass header">
+    <h1>BIZINSIGHT – Business Intelligence Dashboard</h1>
+  </header>
+
+  <main class="container">
+    <!-- Dataset selector -->
+    <section class="glass section" id="datasets-section">
+      <h2>Datasets</h2>
+      <div class="controls">
+        <select id="dataset-select"></select>
+        <button id="refresh-datasets" class="btn">Refresh</button>
+      </div>
+      <div id="dataset-info" class="grid"></div>
+    </section>
+
+    <!-- KPI cards -->
+    <section class="glass section" id="kpi-section">
+      <h2>Key Performance Indicators</h2>
+      <div id="kpi-cards" class="grid"></div>
+    </section>
+
+    <!-- Profiling chart -->
+    <section class="glass section" id="profile-section">
+      <h2>Dataset Profile</h2>
+      <canvas id="profile-chart" width="400" height="200"></canvas>
+    </section>
+
+    <!-- Model explainability -->
+    <section class="glass section" id="model-section">
+      <h2>Model Explainability</h2>
+      <div class="controls">
+        <select id="model-select"></select>
+        <button id="load-model" class="btn">Load Model</button>
+      </div>
+      <canvas id="feature-importance" width="400" height="200"></canvas>
+    </section>
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

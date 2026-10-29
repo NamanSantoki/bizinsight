@@ -1,10 +1,14 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column, Integer, String, Text, Float, Boolean, DateTime, ForeignKey, Enum, JSON
 )
 from sqlalchemy.orm import relationship
 from backend.app.core.database import Base
+
+def utc_now() -> datetime:
+    """Return timezone-aware current UTC datetime."""
+    return datetime.now(timezone.utc)
 
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
@@ -20,7 +24,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     role = Column(String(50), default=UserRole.ANALYST.value, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
 
     datasets = relationship("Dataset", back_populates="owner")
     audit_logs = relationship("AuditLog", back_populates="user")
@@ -33,7 +37,7 @@ class DataSource(Base):
     source_type = Column(String(50), nullable=False)  # csv, excel, postgres, api
     connection_config = Column(JSON, nullable=True)   # for api or postgres
     status = Column(String(50), default="active")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     datasets = relationship("Dataset", back_populates="data_source")
 
@@ -47,6 +51,7 @@ class Dataset(Base):
     raw_file_path = Column(String(500), nullable=False)
     processed_file_path = Column(String(500), nullable=True)
     storage_table_name = Column(String(100), nullable=True) # for dynamic SQL queries
+    file_hash = Column(String(64), nullable=True)           # SHA-256 raw file digest
     
     row_count = Column(Integer, default=0)
     column_count = Column(Integer, default=0)
@@ -54,8 +59,8 @@ class Dataset(Base):
     
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     data_source_id = Column(Integer, ForeignKey("data_sources.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     owner = relationship("User", back_populates="datasets")
     data_source = relationship("DataSource", back_populates="datasets")
@@ -74,7 +79,7 @@ class DataQualityReport(Base):
     summary = Column(JSON, nullable=False)       # missing %, duplicates, invalid counts
     column_issues = Column(JSON, nullable=False) # list of column-level errors/warnings
     passed = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     dataset = relationship("Dataset", back_populates="quality_reports")
 
@@ -102,7 +107,7 @@ class ModelRun(Base):
     predictions_payload = Column(JSON, nullable=True) # forecasts with upper/lower bounds
     feature_importance = Column(JSON, nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     dataset = relationship("Dataset", back_populates="model_runs")
 
@@ -118,7 +123,7 @@ class AnomalyRecord(Base):
     affected_fields = Column(JSON, nullable=False)
     record_payload = Column(JSON, nullable=False)
     explanation = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     dataset = relationship("Dataset", back_populates="anomalies")
 
@@ -131,7 +136,7 @@ class CustomerSegmentRecord(Base):
     segment_label = Column(String(100), nullable=False) # e.g. "High Value, High Frequency"
     customer_count = Column(Integer, nullable=False)
     characteristics = Column(JSON, nullable=False) # avg recency, avg frequency, avg monetary
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     dataset = relationship("Dataset", back_populates="segments")
 
@@ -146,6 +151,8 @@ class AuditLog(Base):
     resource_id = Column(String(100), nullable=True)
     details = Column(JSON, nullable=True)
     ip_address = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    prev_hash = Column(String(64), nullable=True)    # Cryptographic block linkage
+    record_hash = Column(String(64), nullable=True)  # SHA-256 digest of this block
+    created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", back_populates="audit_logs")

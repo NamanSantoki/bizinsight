@@ -1,0 +1,7 @@
+apiVersion: v2
+name: bizinsight
+description: BizInsight Enterprise Platform – production-grade Helm chart
+type: application
+version: 0.2.0
+appVersion: "2.0.0"
+

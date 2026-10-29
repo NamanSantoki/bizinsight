@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 class Token(BaseModel):
     access_token: str
@@ -25,9 +25,7 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserLogin(BaseModel):
     username: str
@@ -47,25 +45,24 @@ class AuditLogResponse(BaseModel):
     resource_type: Optional[str]
     resource_id: Optional[str]
     details: Optional[Dict[str, Any]]
+    prev_hash: Optional[str] = None
+    record_hash: Optional[str] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DatasetResponse(BaseModel):
     id: int
     name: str
-    description: Optional[str]
+    description: Optional[str] = None
     source_type: str
     row_count: int
     column_count: int
-    storage_table_name: Optional[str]
-    schema_metadata: Optional[Dict[str, Any]]
+    storage_table_name: Optional[str] = None
+    file_hash: Optional[str] = None
+    schema_metadata: Optional[Dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DataQualityReportResponse(BaseModel):
     id: int
@@ -76,9 +73,7 @@ class DataQualityReportResponse(BaseModel):
     column_issues: List[Dict[str, Any]]
     passed: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CleaningRequest(BaseModel):
     remove_duplicates: bool = True

@@ -21,15 +21,17 @@ def detect_anomalies(
 
     # Select numeric features
     if not feature_columns:
-        feature_columns = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+        numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+        # Fallback: if no numeric columns detected, use all columns (coerce will handle conversion)
+        feature_columns = numeric_cols if numeric_cols else list(df.columns)
 
     if len(feature_columns) == 0:
-        return {"error": "No numeric feature columns available to compute anomaly scores."}
+        return {"error": "No feature columns available to compute anomaly scores."}
 
-    # Prepare feature matrix
-    X_df = df[feature_columns].copy()
+    # Prepare feature matrix — coerce all selected columns to numeric to prevent dtype errors
+    X_df = df[feature_columns].apply(pd.to_numeric, errors='coerce')
     # Impute missing values with median for isolation forest stability
-    X_imputed = X_df.apply(lambda col: col.fillna(col.median()))
+    X_imputed = X_df.apply(lambda col: col.fillna(col.median() if col.notna().any() else 0))
     
     # Fit Isolation Forest
     iso_forest = IsolationForest(

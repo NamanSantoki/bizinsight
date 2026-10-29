@@ -1,81 +1,137 @@
-# BIZINSIGHT
-## Production-Grade Business Intelligence, Predictive Analytics & Natural-Language Platform
+# BIZINSIGHT Enterprise Platform 2.0
+## Mini Enterprise Data, MLOps & Decision Intelligence Platform
 
-BIZINSIGHT is an end-to-end business analytics, ML evaluation, and natural-language data querying system engineered with strict data integrity, zero fabricated metrics, chronological validation, and robust SQL injection defenses.
+BIZINSIGHT 2.0 is an enterprise-grade data and decision intelligence platform engineered across four foundational architectural planes: **Data Plane**, **Intelligence Plane**, **Governance Plane**, and **Experience Plane**. 
 
----
-
-## 1. System Architecture
-
-```
-BIZINSIGHT Architecture:
-┌───────────────────────────┐      HTTP REST      ┌─────────────────────────────────┐
-│     React 19 + TS +       │ ◄─────────────────► │        FastAPI Backend          │
-│   Tailwind CSS Dashboard  │                     │   (Pydantic, SQLAlchemy 2.0)    │
-└───────────────────────────┘                     └────────────────┬────────────────┘
-                                                                   │
-                                           ┌───────────────────────┴───────────────────────┐
-                                           ▼                                               ▼
-                         ┌───────────────────────────────────┐           ┌───────────────────────────────────┐
-                         │      Analytics & ML Engines       │           │        PostgreSQL / SQLite        │
-                         │ - Chronological Forecasting       │           │ - Dynamic Sanitized Tables        │
-                         │ - Isolation Forest Anomalies      │           │ - Read-Only Safe SQL Validator    │
-                         │ - K-Means RFM Segmentation        │           │ - Audit Trail & Model Run Store   │
-                         │ - Profiling & Quality Scoring     │           └───────────────────────────────────┘
-                         └───────────────────────────────────┘
-```
+Designed to reflect production architectures found in modern data companies, BIZINSIGHT transitions business analytics from ad-hoc queries into a governed, auditable, and resilient platform featuring **multi-source ingestion connectors, formal data contracts with quarantine gates, 6-dimension data quality scoring, centralized semantic metrics stores, governed text-to-SQL with AST validation, MLOps model registry & drift monitoring, digital twin scenario planning, and attribute-based access control (ABAC)**.
 
 ---
 
-## 2. Core Modules & Engineering Principles
+## 1. Enterprise 4-Plane Architecture
 
-### A. Data Ingestion & Profiling
-- Multi-format ingestion supporting CSV, TXT, Excel (`.xlsx`, `.xls`).
-- Automatic encoding detection (`chardet`) and delimiter sniffing (`,`, `;`, `\t`, `|`).
-- Never mutates raw ingested files; strict separation of `raw` and `processed` layers.
-- Full statistical profiling: IQR outlier counts, percentiles, null ratios, cardinality, and memory footprints.
+```
+                         BIZINSIGHT ENTERPRISE PLATFORM
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           EXPERIENCE PLANE                              │
+│                                                                         │
+│ Dashboard │ Data Catalog │ Governed NLQ │ Lineage │ Scenarios │ Health  │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │
+                         API Gateway / BFF
+                                │
+              ┌─────────────────┴──────────────────┐
+              │                                    │
+       Identity & Access                     Job Orchestrator
+       OIDC / JWT Bearer                     Async Workers
+       RBAC + ABAC Policies                  Queue / Scheduler
+              │                                    │
+              └─────────────────┬──────────────────┘
+                                │
+                    ENTERPRISE DATA PLATFORM
+                                │
+       ┌────────────────────────┼────────────────────────┐
+       │                        │                        │
+   Data Sources            Data Contracts           Data Lineage
+   Multi-Connectors        Schema & Rules           End-to-End DAG
+   CDC / Batch Sync        Quarantine Routing       Lakehouse Trace
+       │                        │                        │
+       └────────────────────────┼────────────────────────┘
+                                │
+                         Lakehouse Layer
+                  Bronze (Raw) → Silver (Clean) → Gold (Curated)
+                                │
+                    Semantic / Metrics Store
+                                │
+             ┌──────────────────┼───────────────────┐
+             │                  │                   │
+      Analytics Plane       MLOps Plane         GenAI / NLQ
+             │                  │                   │
+       KPI & Variance     Model Registry v1..v7   AST Validation
+       Segmentation       Population Drift (PSI)  Semantic Layer
+       Digital Twin       Retraining Pipeline     Zero Hallucination
+       Causal Rigor       TreeSHAP Attribution    Evidence Citations
+             │                  │                   │
+             └──────────────────┼───────────────────┘
+                                │
+                    GOVERNANCE + OBSERVABILITY
+                                │
+        Cryptographic Audit │ Kubernetes Probes │ Telemetry
+        Row/Column Masking │ 4-Tier PII Classification │ Cost Gov
+```
 
-### B. Transparent Data Quality Engine
-- Documented quality formula:
-  $$\text{Quality Score} = 100.0 - (\text{Null Penalty} + \text{Duplicate Penalty} + \text{Outlier Penalty} + \text{Domain Penalty})$$
-- Detects prohibited negative pricing, 100% null columns, zero-variance columns, and date inconsistencies.
-- Auditable cleaning operations (duplicate removal, snake_casing, median/mode imputation, IQR clipping).
+---
 
-### C. Leakage-Free Chronological Forecasting
-- **Zero Random Splitting**: Prevents future data leakage by strictly partitioning time series into past train sets (80%) and holdout test sets (20%).
-- **Multi-Model Benchmark**: Evaluates Naive Last-Value Baseline, Moving Average, Linear Regression, Random Forest, and XGBoost against actual test metrics (MAE, RMSE, MAPE, R²).
-- **Uncertainty Bounds**: Generates 95% confidence intervals ($\pm 1.96 \times \sigma_{\text{residuals}}$) that widen as forecast steps project further ahead.
-- **Honest Limitations**: If historical observations are fewer than 20 periods, the system rejects the execution with an explicit explanation rather than inventing predictions.
+## 2. Core Subsystem Breakdown
 
-### D. Multivariate Anomaly Detection
-- Unsupervised Isolation Forest isolating anomalous combinations across numeric dimensions.
-- Explains deviations objectively using dataset medians and IQR factors without falsely labeling records as fraud.
+### 🗄️ A. Data Platform Layer
+- **Multi-Source Connectors**: Direct connectors for PostgreSQL, MySQL, SQLite, REST APIs, CSV, Parquet, and S3 Object Stores with credential masking, connection health pings, and on-demand synchronizations.
+- **Governed Data Contracts**: Strict declarative schemas defining required fields, data types, uniqueness constraints, numerical bounds, and enum domains.
+- **Automated Quarantine Gate**: Datasets failing schema checks or containing duplicate/out-of-bounds records are automatically quarantined for investigation rather than corrupting curated lakehouse tables.
+- **6-Dimension Quality Framework**: Evaluates datasets across Completeness, Validity, Uniqueness, Consistency, Freshness, and Distribution Stability. Enforces an automated gate ($\text{Score} \ge 95.0\%$) to promote records to the Gold Lakehouse layer.
+- **Interactive Data Lineage DAG**: End-to-end directed acyclic graph mapping data transformation dependencies:
+  $$\text{Source DB} \longrightarrow \text{Bronze (Raw)} \longrightarrow \text{Silver (Clean)} \longrightarrow \text{Gold (Curated)} \longrightarrow \text{KPIs / ML Models / Dashboards}$$
 
-### E. Customer Segmentation
-- Data-driven RFM (Recency, Frequency, Monetary) clustering with K-Means.
-- Log-transformation and standard scaling to handle skewed transaction distributions.
+### 🧠 B. Semantic Layer & Centralized Metrics Store
+- **Single Source of Truth**: Eliminates conflicting SQL calculations across teams by defining metrics centrally:
+  - $\text{Net Revenue} = \sum(\text{completed\_orders.amount})$
+  - $\text{AOV} = \text{Revenue} / \text{Order Count}$
+  - $\text{Gross Margin} = (\text{Revenue} - \text{COGS}) / \text{Revenue}$
+  - $\text{Retention Rate} = \text{Returning Customers} / \text{Base Customers}_{t-1}$
+  - $\text{Churn Rate} = \text{Lost Accounts} / \text{Active Accounts}_t$
+- **Governed Query Compiler**: Automatically compiles certified SQL queries sliced across verified dimensions (Region, Segment, Product Category) with a strict zero-metric-hallucination guarantee.
 
-### F. Ask Your Data (NLP to SQL) with Injection Defense
-- Natural language to SQL translation grounded directly on indexed table schemas.
-- Strict security validator blocking mutating commands (`DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`, `TRUNCATE`, etc.).
-- Enforces read-only `SELECT` queries with mandatory row limits.
-- Generates answers strictly from executed database results; refuses to fabricate answers.
+### 🤖 C. Governed AI Analyst & NLQ Engine
+- **Governed Text-to-SQL Pipeline**:
+  $$\text{User Prompt} \longrightarrow \text{Intent Detection} \longrightarrow \text{Semantic Lookup} \longrightarrow \text{SQL Generation} \longrightarrow \text{AST Security Check} \longrightarrow \text{Read-Only Exec} \longrightarrow \text{Evidence Citation}$$
+- **SQL AST Validation**: Enforces read-only `SELECT` queries, rejects multi-statement execution, blocks mutation keywords (`DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`), and appends row limits.
+- **Evidence-Backed Attribution**: Every answer is assigned a traceable Query ID (e.g., `QRY-8F291A`), lists primary contributors, states model confidence, and cites exact underlying curated datasets.
+
+### 🔮 D. Decision Intelligence & Econometric Causal Inference
+- **Digital Twin Scenario Simulator**: Simulates multi-variable macroeconomic interventions (Marketing Spend, Pricing, Sales Capacity) through empirical elasticity equations, generating projected revenue, operating margins, and expected customer counts with **80% prediction intervals** (accounting for residual standard error).
+- **Prescriptive Goal-Seek Optimizer**: Solves inverse constrained optimization problems (e.g. *Achieve ₹25 Cr revenue while maintaining $\ge 20\%$ margin and $\le ₹4$ Cr marketing budget*) to recommend optimal tactical lever allocations.
+- **Econometric Causal Engine**: Evaluates treatment effects using Inverse Probability Weighting (IPW) and Double Machine Learning (DML). Features Standardized Mean Difference (SMD) covariate balance checks, placebo refutation sensitivity tests, and explicit verification of identification assumptions:
+  1. *Conditional Exchangeability* (Unconfoundedness)
+  2. *Positivity* (Common Support)
+  3. *Consistency & SUTVA*
+  - **Epistemic Disclaimer**: Explicitly enforces that **Association $\ne$ Causation**.
+
+### ⚙️ E. MLOps Model Registry & Drift Observability
+- **Governed Model Registry**: Tracks model artifacts, hyperparameters, evaluation metrics (MAE, RMSE, Accuracy), and training dataset lineage across semantic versions ($v_1 \dots v_7$).
+- **Lifecycle State Machine**: Enforces formal stage progression:
+  $$\text{TRAINED} \longrightarrow \text{EVALUATION} \longrightarrow \text{VALIDATION} \longrightarrow \text{PENDING\_APPROVAL} \longrightarrow \text{APPROVED} \longrightarrow \text{STAGING} \longrightarrow \text{PRODUCTION}$$
+- **Population Stability & Drift Telemetry**: Continuously tracks prediction volume, P95 inference latency, error rates, data drift, and feature drift, triggering automated retraining recommendations when feature drift exceeds nominal thresholds.
+
+### 🔐 F. Enterprise Identity, ABAC & Governance
+- **Attribute-Based Access Control (ABAC)**: Evaluates dynamic multi-attribute authorization matrices across Role (`admin`, `analyst`, `viewer`), Department (`Finance`, `Marketing`, `Engineering`, `Executive`), Region (`Global`, `Europe`, `NorthAmerica`, `APAC`), and Resource Sensitivity.
+- **Row-Level & Column-Level Dynamic Masking**: Automatically filters rows according to the user's regional clearance and dynamically masks personal identifying information (`n***@enterprise.com`, `***-***-1234`).
+- **4-Tier Data Classification**: Deep column scanner classifying data into:
+  - 🔴 **Highly Sensitive** (SSN, Passport, Payment Cards)
+  - 🟠 **Confidential** (Customer Email, Phone, Revenue, Margins)
+  - 🟡 **Internal** (Order IDs, Statuses, Department Codes)
+  - 🟢 **Public** (Country, Currency, Aggregate Dates)
+- **Two-Person Dual Approvals**: Sensitive operations (production model promotions, high-risk PII data exports) require independent reviewer verification before execution.
+- **Cryptographically Auditable Architecture**: Every administrative, ingest, and export action is logged with SHA-256 block chaining to provide tamper evidence and detect inconsistency with the expected chain (designed to support SOC 2-oriented security and audit controls).
+
+### 📡 G. Observability & Operations Center
+- **Kubernetes Health Probes**: Cloud-native endpoints (`/health/live`, `/health/ready`, `/health/database`, `/health/ml`, `/health/queue`) for orchestration liveness and readiness monitoring.
+- **Operations Center**: Subsystem uptime monitoring and incident response tracking (impact analysis, root-cause diagnostics, and remediation logging).
+- **Cloud Cost Observability**: Granular financial attribution tracking compute, SQL queries, ML inference, and curated storage across tenants and business units.
 
 ---
 
 ## 3. Quick Start & Execution
 
-### Option A: Local Native Execution (Offline-Ready)
+### Option A: Local Execution
 1. **Backend**:
    ```bash
-   cd N:/PathtoGermany
    pip install -r backend/requirements.txt
-   uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+   python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
    ```
 2. **Frontend**:
    ```bash
-   cd N:/PathtoGermany/frontend
-   npm run dev
+   cd frontend
+   npm install
+   npm run dev -- --host 127.0.0.1 --port 5173
    ```
    Open `http://localhost:5173` in your browser.
 
@@ -83,28 +139,21 @@ BIZINSIGHT Architecture:
 ```bash
 docker-compose up --build
 ```
-Services spun up:
-- `postgresql`: Port 5432
-- `backend`: Port 8000
-- `frontend`: Port 3000
-- `ollama`: Port 11434
 
 ---
 
-## 4. Automated Testing
-Run the complete backend test suite:
+## 4. Test Suite Execution
+
+Run the complete 39-test enterprise test suite:
 ```bash
-pytest backend/tests/test_core_engines.py -v
+python -m pytest backend/tests -v
 ```
-All 11 unit & integration tests verify:
-- Delimiter detection & ingestion
-- Profiler accuracy
-- Quality score formula
-- Auditable cleaning
-- KPI calculations
-- Chronological forecasting validation
-- Insufficient data guards
-- Isolation Forest anomaly detection
-- RFM K-Means clustering
-- SQL security filter & mutation blocking
-- Salted PBKDF2 password hashing
+
+### Verified Test Categories:
+- **Enterprise Data Platform**: Data source connectors, health pings, sync runs, contract validation rules, quarantine logic, 6-dimension quality gates, and lineage DAG graph traversals.
+- **Semantic Layer**: Central metrics resolution, dimensional slicing, and SQL compilation with zero-hallucination validation.
+- **Governance & Security**: ABAC policy evaluation, dynamic row filtering, column PII masking, 4-tier automated data classification, dual-person approvals, and expirable export tokens.
+- **MLOps Platform**: Model registry version transitions ($v_1 \dots v_7$), population stability index drift detection, and automated retraining flags.
+- **Decision Intelligence**: Digital twin scenario simulations with 80% prediction intervals, convex prescriptive goal-seek optimization, and econometric causal refutation tests.
+- **Observability**: Standard Kubernetes probes (`/health/live`, `/health/ready`, `/health/database`, `/health/ml`), telemetry percentiles, cost attribution, and incident triage.
+- **Core Security & Integrity**: Salted PBKDF2 hashing, zero-trust JWT authentication, SQL injection guards, system table overwrite protection, and SHA-256 cryptographic audit chain tamper detection.

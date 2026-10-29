@@ -1,25 +1,37 @@
 import os
 import io
 import re
+import hashlib
 import chardet
 import pandas as pd
 from typing import Dict, Any, Tuple
-from fastapi import UploadFile, HTTPException
+from fastapi import HTTPException
 
-def sanitize_table_name(name: str) -> str:
-    cleaned = re.sub(r'[^a-zA-Z0-9_]', '_', name.lower().strip())
-    if not cleaned or cleaned[0].isdigit():
-        cleaned = f"ds_{cleaned}"
+RESERVED_SYSTEM_TABLES = {
+    "users", "datasets", "audit_logs", "data_sources", 
+    "data_quality_reports", "model_runs", "anomalies", "customer_segments",
+    "alembic_version", "sqlite_master", "sqlite_sequence", "pg_catalog", "information_schema"
+}
+
+def sanitize_table_name(name: str, prefix: str = "usr_ds_") -> str:
+    """
+    Sanitizes dynamic table name to prevent SQL injection and guarantees
+    user datasets can NEVER collide with or overwrite system tables.
+    """
+    cleaned = re.sub(r'[^a-zA-Z0-9_]', '_', name.lower().strip()).strip('_')
+    if not cleaned:
+        cleaned = "data"
+    # Never allow matching a reserved table or starting with numeric
+    if cleaned in RESERVED_SYSTEM_TABLES or cleaned[0].isdigit() or not cleaned.startswith(prefix):
+        cleaned = f"{prefix}{cleaned}"
     return cleaned[:48]
 
 def detect_file_encoding(file_bytes: bytes) -> str:
-    # Take sample of up to 64KB for speed and accuracy
     sample = file_bytes[:65536]
     result = chardet.detect(sample)
     encoding = result.get("encoding")
     if not encoding:
         return "utf-8"
-    # Normalize common windows encodings
     if encoding.lower() in ["ascii", "iso-8859-1", "windows-1252"]:
         return "latin1"
     return encoding
@@ -30,23 +42,20 @@ def inspect_and_read_file(
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Ingests CSV or Excel bytes safely:
-    - Detects encoding
-    - Detects delimiter (comma, semicolon, tab, pipe)
-    - Inspects headers
+    - Computes cryptographic SHA-256 hash for lineage & integrity
+    - Detects encoding & delimiter safely
     - Infers types, dates, numerics, categoricals
     - Never mutates raw inputs
     """
+    file_hash = hashlib.sha256(file_bytes).hexdigest()
     ext = os.path.splitext(filename)[1].lower()
     encoding_detected = "utf-8"
     delimiter_detected = ","
 
     if ext in [".csv", ".txt"]:
         encoding_detected = detect_file_encoding(file_bytes)
-        
-        # Test delimiter on sample
         try:
             sample_text = file_bytes[:16384].decode(encoding_detected, errors="ignore")
-            # Look for common delimiters
             counts = {
                 ",": sample_text.count(","),
                 ";": sample_text.count(";"),
@@ -64,8 +73,7 @@ def inspect_and_read_file(
                 sep=delimiter_detected,
                 low_memory=False
             )
-        except Exception as e:
-            # Fallback with python engine
+        except Exception:
             try:
                 df = pd.read_csv(
                     io.BytesIO(file_bytes),
@@ -94,21 +102,16 @@ def inspect_and_read_file(
 
     for col in df.columns:
         col_str = str(col)
-        # Check if column is numeric
         if pd.api.types.is_numeric_dtype(df[col]):
             numeric_columns.append(col_str)
             continue
         
-        # Check if column looks like a date
-        # If string, sample non-null values
         non_null_samples = df[col].dropna().head(20).astype(str).tolist()
         is_date = False
         if non_null_samples:
             try:
-                converted = pd.to_datetime(non_null_samples, errors='coerce')
-                # If at least 80% successfully parsed and wasn't purely integers like IDs
+                converted = pd.to_datetime(non_null_samples, errors='coerce', format='mixed')
                 if converted.notnull().mean() > 0.8:
-                    # Guard against pure numbers being interpreted as timestamps
                     if not all(s.replace('.', '', 1).isdigit() for s in non_null_samples if s):
                         is_date = True
             except Exception:
@@ -122,6 +125,7 @@ def inspect_and_read_file(
     metadata = {
         "filename": filename,
         "extension": ext,
+        "file_hash": file_hash,
         "encoding": encoding_detected,
         "delimiter": delimiter_detected,
         "raw_rows": int(len(df)),
