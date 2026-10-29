@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Radio, TrendingUp, AlertTriangle, ShieldCheck, RefreshCw, 
-  Clock, ArrowRight, CheckCircle2, ChevronRight, Zap, Target,
-  DollarSign, Building2, Sliders, ExternalLink
+  Radio, TrendingUp, ShieldCheck, RefreshCw, 
+  Clock, CheckCircle2, Target, Building2, Sliders
 } from 'lucide-react';
 import { apiClient } from '../../services/api';
 
