@@ -83,6 +83,57 @@ class DataContractEngine:
         self._contracts[dataset_name] = contract
         return contract.to_dict()
 
+    def infer_and_register_contract(self, dataset_name: str, df: pd.DataFrame) -> Dict[str, Any]:
+        """Dynamically infers and registers a strict production contract matching dataset columns."""
+        if dataset_name in self._contracts and dataset_name == "sales_orders":
+            return self._contracts[dataset_name].to_dict()
+
+        col_objs = []
+        for col in df.columns:
+            s = df[col]
+            is_nullable = bool(s.isnull().any())
+            
+            # Identify data type
+            if pd.api.types.is_integer_dtype(s):
+                dtype_name = "integer"
+            elif pd.api.types.is_float_dtype(s):
+                dtype_name = "decimal"
+            elif pd.api.types.is_datetime64_any_dtype(s) or any(k in str(col).lower() for k in ["date", "time", "timestamp"]):
+                dtype_name = "datetime"
+            elif s.nunique() <= 8 and len(df) > 20:
+                dtype_name = "enum"
+            else:
+                dtype_name = "string"
+
+            # Check uniqueness
+            is_unique = bool(s.nunique() == len(df)) if len(df) > 0 and (
+                any(k in str(col).lower() for k in ["id", "code", "key", "uuid"]) or dtype_name in ["integer", "string"]
+            ) else False
+
+            min_v = None
+            max_v = None
+            if pd.api.types.is_numeric_dtype(s) and not s.dropna().empty:
+                min_v = float(s.min())
+                max_v = float(s.max())
+
+            allowed_vals = None
+            if dtype_name == "enum":
+                allowed_vals = [str(x) for x in s.dropna().unique().tolist()[:10]]
+
+            col_objs.append(ColumnContract(
+                name=str(col),
+                dtype=dtype_name,
+                nullable=is_nullable,
+                unique=is_unique,
+                min_val=min_v,
+                max_val=max_v,
+                allowed_values=allowed_vals
+            ))
+
+        contract = DataContract(dataset_name, col_objs)
+        self._contracts[dataset_name] = contract
+        return contract.to_dict()
+
     def get_contract(self, dataset_name: str) -> Optional[Dict[str, Any]]:
         contract = self._contracts.get(dataset_name)
         if not contract:

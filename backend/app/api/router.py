@@ -36,6 +36,23 @@ from backend.app.security.auth import get_current_user_optional, get_current_act
 
 router = APIRouter()
 
+# Include feature routers
+from .nlq_router import router as nlq_router
+from .ast_router import router as ast_router
+from .mlops_router import router as mlops_router
+from .shap_router import router as shap_router
+from .forecast_router import router as forecast_router
+from .anomaly_router import router as anomaly_router
+from .segments_router import router as segments_router
+
+router.include_router(nlq_router)
+router.include_router(ast_router)
+router.include_router(mlops_router)
+router.include_router(shap_router)
+router.include_router(forecast_router)
+router.include_router(anomaly_router)
+router.include_router(segments_router)
+
 # Helper to load dataset dataframe with database fallback resilience
 def load_dataset_dataframe(dataset: Dataset) -> pd.DataFrame:
     file_path = dataset.processed_file_path or dataset.raw_file_path
