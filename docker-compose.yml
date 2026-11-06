@@ -14,19 +14,34 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bizuser -d bizinsight"]
+      test: [ "CMD-SHELL", "pg_isready -U bizuser -d bizinsight" ]
       interval: 5s
       timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: bizinsight-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
       retries: 5
 
   backend:
     build:
       context: .
-      dockerfile: docker/Dockerfile.backend
+      dockerfile: backend/Dockerfile
     container_name: bizinsight-backend
     restart: always
     environment:
       DATABASE_URL: postgresql://bizuser:bizpassword2026@postgresql:5432/bizinsight
+      REDIS_URL: redis://redis:6379
       SECRET_KEY: ${SECRET_KEY:-bizinsight-production-grade-super-secret-key-2026}
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: llama3
@@ -35,14 +50,17 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./data:/app/data
-      - ./ml:/app/ml
+      - ./backend/ml:/app/ml
+      - ./logs:/app/logs
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../docker/Dockerfile.frontend
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: bizinsight-frontend
     restart: always
     ports:
@@ -61,4 +79,5 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
   ollamadata:

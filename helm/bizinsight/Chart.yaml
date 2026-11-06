@@ -1,0 +1,17 @@
+apiVersion: v2
+name: bizinsight
+description: Enterprise Industry-Ready AI Business Intelligence & Decision Intelligence Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - analytics
+  - business-intelligence
+  - decision-intelligence
+  - mlops
+  - fastapi
+  - react
+maintainers:
+  - name: Core Architecture Team
+    email: devops@bizinsight.enterprise.internal
+

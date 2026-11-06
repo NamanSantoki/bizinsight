@@ -44,7 +44,7 @@ def is_ast_safe(tree: ast.AST) -> (bool, List[str]):
     return (len(disallowed) == 0, disallowed)
 
 @router.post("/verify", response_model=ASTVerifyResponse)
-async def verify_ast(request: ASTVerifyRequest, role: str = Depends(require_role("developer")):
+async def verify_ast(request: ASTVerifyRequest, role: str = Depends(require_role("developer"))):
     try:
         tree = ast.parse(request.code)
     except SyntaxError as e:

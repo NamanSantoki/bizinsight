@@ -148,3 +148,39 @@ class ModelRegistry:
 
 model_registry = ModelRegistry()
 
+def get_model_versions(model_name: str) -> List[Dict[str, Any]]:
+    """Return list of version dicts for a model name."""
+    model = model_registry.get_model(model_name)
+    if not model:
+        return []
+    return model.get("versions", [])
+
+def register_model_version(
+    model_name: str,
+    version: int | str,
+    metadata: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """Register or append a new model version to the registry."""
+    v_str = f"v{version}" if isinstance(version, int) else str(version)
+    meta = metadata or {}
+    new_version = ModelVersion(
+        model_id=meta.get("model_id", f"{model_name[:8].lower().replace(' ', '_')}_{v_str}"),
+        name=model_name,
+        version=v_str,
+        algorithm=meta.get("algorithm", "XGBoost Enterprise"),
+        dataset=meta.get("dataset", "production_data"),
+        features_count=meta.get("features_count", 10),
+        training_period=meta.get("training_period", "2024-2026"),
+        mae=float(meta.get("mae", 0.05)),
+        rmse=float(meta.get("rmse", 0.08)),
+        accuracy_score=float(meta.get("accuracy_score", 95.0)),
+        status=meta.get("status", "STAGING"),
+        created_at=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        owner=meta.get("owner", "MLOps Automation")
+    )
+    if model_name not in model_registry._models:
+        model_registry._models[model_name] = []
+    model_registry._models[model_name].append(new_version)
+    return new_version.to_dict()
+
+

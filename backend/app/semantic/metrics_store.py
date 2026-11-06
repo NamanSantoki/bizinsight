@@ -5,6 +5,8 @@ preventing arbitrary ad-hoc SQL divergence across dashboards and AI interfaces.
 """
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
+import pandas as pd
+import numpy as np
 
 class SemanticMetric:
     def __init__(

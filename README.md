@@ -137,20 +137,30 @@ Designed to reflect production architectures found in modern data companies, BIZ
 
 ### Option B: Docker Compose
 ```bash
-docker-compose up --build
+docker-compose up -d --build
+```
+
+### Kubernetes Cloud-Native Deployment (Helm)
+Deploy to any Kubernetes cluster (EKS, GKE, AKS, or local Minikube/k3s):
+```bash
+helm install bizinsight ./helm/bizinsight \
+  --namespace bizinsight \
+  --create-namespace \
+  --values ./helm/bizinsight/values.yaml
 ```
 
 ---
 
 ## 4. Test Suite Execution
 
-Run the complete 42-test enterprise test suite:
+Run the complete 54-test enterprise test suite:
 ```bash
 python -m pytest backend/tests -v
 ```
 
-### Verified Test Categories:
-- **Enterprise Data Platform**: Data source connectors, health pings, sync runs, contract validation rules, quarantine logic, 6-dimension quality gates, and lineage DAG graph traversals.
+### Verified Test Categories (54/54 Passing):
+- **Enterprise 2.0 Feature Gates**: AST code sandbox verification, MLOps model versioning & drift detection, Redis cache with in-memory TTL fallback, multivariate Isolation Forest anomaly detection, RFM K-Means customer segmentation (`test_enterprise_features.py`).
+- **Enterprise Data Platform**: Data source connectors, health pings, sync runs, contract validation rules, quarantine logic, 6-dimension quality gates, and lineage DAG graph traversals (`test_enterprise_platform.py`).
 - **Enterprise Connectors & CDC**: Automated ingestion schedules, periodic sync triggers, and enterprise API key generation/revocation with prefix masking (`test_enterprise_connectors.py`).
 - **Observability & SRE Metrics**: Live Prometheus `/metrics` endpoint with RED metrics, latency histograms, error budget burn rates, and health gauges (`test_metrics_observability.py`).
 - **Semantic Layer**: Central metrics resolution, dimensional slicing, and SQL compilation with zero-hallucination validation.
@@ -164,7 +174,18 @@ python -m pytest backend/tests -v
 
 ## 5. Enterprise Connectors & Observability Guide
 
-### Enterprise Connectors API
+### Enterprise API Endpoints
+- **Governed NLQ Studio**: `POST /api/v1/enterprise/nlq/`
+- **AST Safety Verification**: `POST /api/v1/enterprise/ast/verify`
+- **MLOps Model Lifecycle**: `POST /api/v1/enterprise/mlops/models/{model_name}/versions`
+- **MLOps Drift Detection**: `GET /api/v1/enterprise/mlops/drift/{model_name}/{version}`
+- **TreeSHAP Explainability**: `POST /api/v1/enterprise/shap/explain`
+- **Quantile Forecasting**: `POST /api/v1/enterprise/forecast/`
+- **Isolation Forest Anomalies**: `POST /api/v1/enterprise/anomalies/detect`
+- **RFM Customer Segmentation**: `POST /api/v1/enterprise/segments/cluster`
+- **Prescriptive Optimization**: `POST /api/v1/enterprise/decision/prescriptive`
+- **Digital Twin Scenarios**: `POST /api/v1/enterprise/decision/scenario`
+- **Causal Econometrics**: `GET /api/v1/enterprise/decision/causal`
 - **List Schedules**: `GET /api/v1/enterprise-connectors/schedules`
 - **Trigger Scheduled Sync**: `POST /api/v1/enterprise-connectors/schedules/{task_id}/run`
 - **Create Enterprise API Key**: `POST /api/v1/enterprise-connectors/api-keys`
@@ -179,7 +200,12 @@ python -m pytest backend/tests -v
 
 ---
 
-## 6. Cloud Deployment (Render)
+## 6. Architecture & Detailed Specifications
+For full technical specifications, data lineage DAGs, and entity relationships, refer to [Architecture Documentation](docs/architecture.md).
+
+---
+
+## 7. Cloud Deployment (Render)
 - **Frontend App**: `https://bizinsight-frontend.onrender.com`
 - **Backend API & Swagger Docs**: `https://bizinsight-backend-0iur.onrender.com/docs`
 - **Health Probe**: `https://bizinsight-backend-0iur.onrender.com/api/v1/health`

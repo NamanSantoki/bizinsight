@@ -64,8 +64,7 @@ def generate_sql_from_question(
     """
     Translates user's natural language question to a safe SQL query using Ollama if running,
     or our high-precision deterministic semantic SQL mapper as fallback.
-    """
-    # 1. Try local Ollama if available
+    """    # 1. Try local Ollama if available
     try:
         schema_desc = ", ".join([f'"{col}" ({column_types.get(col, "TEXT")})' for col in columns])
         system_prompt = (
@@ -194,6 +193,65 @@ def generate_sql_from_question(
     final_cols = selected_cols + remaining
     cols_quoted = ', '.join([f'"{c}"' for c in final_cols])
     return f'SELECT {cols_quoted} FROM "{table_name}" LIMIT 10'
+
+async def process_natural_language_query(
+    question: str,
+    dataset_id: str,
+    db: Optional[Session] = None
+) -> Tuple[str, List[Dict[str, Any]], Optional[str]]:
+    """High‑level helper used by the NLQ API.
+    1. Retrieve dataset metadata (table name, columns, column types).
+    2. Generate a safe SELECT statement via ``generate_sql_from_question``.
+    3. Validate and execute the query safely.
+    4. Return the SQL string, the fetched rows (list of dicts) and an optional
+       ``contract_id`` (kept for API compatibility).
+    """
+    from backend.app.models.all_models import Dataset
+    from backend.app.core.database import SessionLocal
+
+    owns_session = False
+    if db is None:
+        db = SessionLocal()
+        owns_session = True
+
+    try:
+        # Resolve dataset – allow both integer ID or string name.
+        try:
+            ds = db.query(Dataset).filter(Dataset.id == int(dataset_id)).first()
+        except Exception:
+            ds = None
+        if not ds:
+            raise ValueError(f"Dataset with id {dataset_id} not found")
+
+        # Determine table name (prefers materialised table, else raw name)
+        table_name = ds.storage_table_name or ds.name
+
+        # Extract column list and types from stored schema metadata.
+        cols = []
+        col_types: Dict[str, str] = {}
+        if ds.schema_metadata:
+            cols = ds.schema_metadata.get("columns", [])
+            details = ds.schema_metadata.get("column_details", {})
+            for col, meta in details.items():
+                col_types[col] = meta.get("type", "TEXT")
+        if not cols:
+            result = db.execute(text(f"SELECT * FROM \"{table_name}\" LIMIT 0"))
+            cols = list(result.keys())
+            col_types = {c: "TEXT" for c in cols}
+
+        # Generate safe SQL.
+        sql = generate_sql_from_question(question, table_name, cols, col_types)
+
+        # Execute safely – this function also validates the query again.
+        rows, err = execute_safe_query(db, sql, table_name)
+        if err:
+            raise ValueError(f"Query execution failed: {err}")
+
+        contract_id = None
+        return sql, rows or [], contract_id
+    finally:
+        if owns_session:
+            db.close()
 
 def execute_safe_query(
     db: Session,

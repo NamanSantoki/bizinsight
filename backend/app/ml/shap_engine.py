@@ -103,3 +103,35 @@ def compute_shap_explainability(
         "available_records_count": len(X),
         "algorithm": "TreeSHAP (TreeExplainer with Lundberg-Lee Game Theoretic Axioms)"
     }
+
+def explain_shap(model_name: str, dataset_id: str) -> Dict[str, float]:
+    """
+    Extracts top feature importances using TreeSHAP on the target dataset.
+    Returns a dict mapping feature names to importance scores.
+    """
+    import os
+    from backend.app.core.database import SessionLocal
+    from backend.app.models.all_models import Dataset
+
+    db = SessionLocal()
+    try:
+        ds = db.query(Dataset).filter(Dataset.id == int(dataset_id)).first()
+        if not ds:
+            raise ValueError(f"Dataset {dataset_id} not found")
+        file_path = ds.processed_file_path or ds.raw_file_path
+        if not file_path or not os.path.exists(file_path):
+            raise ValueError("Dataset file not found on disk")
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext in [".csv", ".txt"]:
+            df = pd.read_csv(file_path, low_memory=False)
+        else:
+            df = pd.read_excel(file_path)
+
+        result = compute_shap_explainability(df)
+        if "error" in result:
+            raise ValueError(result["error"])
+        features = result.get("global_importance", [])
+        return {item["feature"]: float(item["importance"]) for item in features}
+    finally:
+        db.close()
+
