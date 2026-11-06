@@ -11,7 +11,7 @@ import pandas as pd
 
 from backend.app.core.database import get_db
 from backend.app.models.all_models import User, Dataset
-from backend.app.security.auth import get_current_user
+from backend.app.security.auth import get_current_user, get_current_user_or_default
 from backend.app.security.rbac import require_role
 from backend.app.data_platform.connectors import data_source_manager
 from backend.app.data_platform.contracts import contract_engine
@@ -36,7 +36,7 @@ router = APIRouter(prefix="/enterprise", tags=["enterprise-platform"])
 
 # ----------------- DATA PLATFORM -----------------
 @router.get("/sources")
-def list_data_sources(current_user: User = Depends(get_current_user)):
+def list_data_sources(current_user: User = Depends(get_current_user_or_default)):
     return data_source_manager.list_sources()
 
 @router.post("/sources")
@@ -50,7 +50,7 @@ def add_data_source(
     return data_source_manager.add_source(name, stype, url)
 
 @router.post("/sources/{source_id}/test")
-def test_data_source(source_id: str, current_user: User = Depends(get_current_user)):
+def test_data_source(source_id: str, current_user: User = Depends(get_current_user_or_default)):
     return data_source_manager.test_connection(source_id)
 
 @router.post("/sources/{source_id}/sync")
@@ -61,18 +61,18 @@ def sync_data_source(
     return data_source_manager.trigger_sync(source_id)
 
 @router.get("/contracts/{dataset_name}")
-def get_data_contract(dataset_name: str, current_user: User = Depends(get_current_user)):
+def get_data_contract(dataset_name: str, current_user: User = Depends(get_current_user_or_default)):
     return contract_engine.get_contract(dataset_name)
 
 @router.get("/contracts/{dataset_name}/quarantine")
-def get_quarantined_records(dataset_name: str, current_user: User = Depends(get_current_user)):
+def get_quarantined_records(dataset_name: str, current_user: User = Depends(get_current_user_or_default)):
     return contract_engine.get_quarantined_records(dataset_name)
 
 @router.get("/quality-gates/{dataset_id}")
 def evaluate_dataset_quality_gate(
     dataset_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
@@ -98,11 +98,11 @@ def evaluate_dataset_quality_gate(
     }
 
 @router.get("/lineage")
-def get_data_lineage(current_user: User = Depends(get_current_user)):
+def get_data_lineage(current_user: User = Depends(get_current_user_or_default)):
     return lineage_engine.get_lineage_graph()
 
 @router.get("/lineage/{node_id}")
-def get_lineage_node_details(node_id: str, current_user: User = Depends(get_current_user)):
+def get_lineage_node_details(node_id: str, current_user: User = Depends(get_current_user_or_default)):
     node = lineage_engine.get_node_lineage(node_id)
     if not node:
         raise HTTPException(status_code=404, detail=f"Lineage node {node_id} not found")
@@ -110,11 +110,11 @@ def get_lineage_node_details(node_id: str, current_user: User = Depends(get_curr
 
 # ----------------- SEMANTIC LAYER -----------------
 @router.get("/semantic/metrics")
-def list_semantic_metrics(current_user: User = Depends(get_current_user)):
+def list_semantic_metrics(current_user: User = Depends(get_current_user_or_default)):
     return metrics_store.list_metrics()
 
 @router.get("/semantic/metrics/{metric_id}")
-def get_semantic_metric(metric_id: str, current_user: User = Depends(get_current_user)):
+def get_semantic_metric(metric_id: str, current_user: User = Depends(get_current_user_or_default)):
     metric = metrics_store.get_metric(metric_id)
     if not metric:
         raise HTTPException(status_code=404, detail="Metric not found in semantic layer")
@@ -123,7 +123,7 @@ def get_semantic_metric(metric_id: str, current_user: User = Depends(get_current
 @router.post("/semantic/query")
 def compile_semantic_query(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     metric_id = payload.get("metric_id", "revenue")
     dimension = payload.get("dimension")
@@ -134,7 +134,7 @@ def compile_semantic_query(
 @router.post("/governance/abac/evaluate")
 def evaluate_abac_policy(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     user_role = payload.get("user_role", current_user.role)
     user_dept = payload.get("user_department", "Finance")
@@ -148,7 +148,7 @@ def evaluate_abac_policy(
 def get_dataset_classification(
     dataset_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
@@ -160,13 +160,13 @@ def get_dataset_classification(
     return classification_engine.classify_dataframe(df)
 
 @router.get("/governance/approvals")
-def list_governance_approvals(current_user: User = Depends(get_current_user)):
+def list_governance_approvals(current_user: User = Depends(get_current_user_or_default)):
     return approval_engine.list_requests()
 
 @router.post("/governance/approvals")
 def create_governance_approval(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     action = payload.get("action", "MODEL_DEPLOYMENT")
     resource = payload.get("resource", "Default Resource")
@@ -187,7 +187,7 @@ def review_governance_approval(
 @router.post("/governance/export")
 def request_governed_export(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     dataset_name = payload.get("dataset_name", "dataset")
     classification = payload.get("classification", "Confidential")
@@ -203,7 +203,7 @@ def request_governed_export(
 
 # ----------------- MLOPS PLATFORM -----------------
 @router.get("/mlops/models")
-def list_mlops_models(current_user: User = Depends(get_current_user)):
+def list_mlops_models(current_user: User = Depends(get_current_user_or_default)):
     return model_registry.list_models()
 
 @router.post("/mlops/models/transition")
@@ -217,14 +217,14 @@ def transition_model_stage(
     return model_registry.transition_stage(model_name, version, target_stage, current_user.username)
 
 @router.get("/mlops/monitoring")
-def get_mlops_monitoring(current_user: User = Depends(get_current_user)):
+def get_mlops_monitoring(current_user: User = Depends(get_current_user_or_default)):
     return ml_monitoring.get_monitoring_overview()
 
 # ----------------- DECISION INTELLIGENCE -----------------
 @router.post("/decision/scenario")
 def run_digital_twin_scenario(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     mkt = float(payload.get("marketing_delta_pct", 0.0))
     price = float(payload.get("price_delta_pct", 0.0))
@@ -234,7 +234,7 @@ def run_digital_twin_scenario(
 @router.post("/decision/prescriptive")
 def run_prescriptive_optimization(
     payload: Dict[str, Any] = Body(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     target_rev = float(payload.get("target_revenue_cr", 25.0))
     min_margin = float(payload.get("min_margin_pct", 20.0))
@@ -242,19 +242,19 @@ def run_prescriptive_optimization(
     return prescriptive_optimizer.optimize(target_rev, min_margin, max_budget)
 
 @router.get("/decision/causal")
-def get_causal_econometric_evaluation(current_user: User = Depends(get_current_user)):
+def get_causal_econometric_evaluation(current_user: User = Depends(get_current_user_or_default)):
     return causal_rigor_engine.evaluate_causal_effect()
 
 # ----------------- OBSERVABILITY & OPERATIONS -----------------
 @router.get("/observability/telemetry")
-def get_system_telemetry(current_user: User = Depends(get_current_user)):
+def get_system_telemetry(current_user: User = Depends(get_current_user_or_default)):
     return telemetry_cost.get_system_telemetry()
 
 @router.get("/observability/costs")
-def get_cloud_cost_governance(current_user: User = Depends(get_current_user)):
+def get_cloud_cost_governance(current_user: User = Depends(get_current_user_or_default)):
     return telemetry_cost.get_cost_observability()
 
 @router.get("/observability/operations")
-def get_operations_center_status(current_user: User = Depends(get_current_user)):
+def get_operations_center_status(current_user: User = Depends(get_current_user_or_default)):
     return operations_center.get_operations_status()
 

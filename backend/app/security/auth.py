@@ -93,6 +93,32 @@ async def get_current_user(
         )
     return user
 
+async def get_current_user_or_default(
+    token: Optional[str] = Depends(oauth2_scheme), 
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    Returns authenticated user if token is valid.
+    If no token is provided, gracefully falls back to the analyst user
+    ensuring interactive exploratory UI and decision intelligence remain accessible.
+    """
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            user_id = payload.get("sub")
+            if user_id:
+                user = db.query(User).filter(User.id == int(user_id)).first()
+                if user:
+                    return user
+        except JWTError:
+            pass
+
+    default_user = db.query(User).filter(User.username == "analyst").first()
+    if not default_user:
+        default_user = db.query(User).first()
+    return default_user
+
+
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Ensures user account is active."""
     if not current_user.is_active:

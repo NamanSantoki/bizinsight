@@ -125,3 +125,4 @@ flowchart TD
 - **Horizontal Scaling**: Independent replica counts and resource request/limit controls for Backend and Frontend.
 - **Readiness & Liveness Probes**: Deep health checking verifying database and cache connectivity.
 - **Ingress Controller**: TLS termination, prefix routing (`/api` $\rightarrow$ Backend, `/` $\rightarrow$ Frontend), and rate limiting.
+
