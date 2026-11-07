@@ -221,6 +221,9 @@ export interface AskDataResponse {
   sources_used: string[];
   confidence_explanation: string;
   execution_time_ms: number;
+  intent?: string;
+  key_insights?: string[];
+  suggested_followups?: string[];
 }
 
 export interface CausalResponse {

@@ -1,6 +1,8 @@
 # BIZINSIGHT Enterprise Platform 2.0
 ## Mini Enterprise Data, MLOps & Decision Intelligence Platform
 
+![Architecture Diagram](./artifacts/architecture_diagram.md)
+
 BIZINSIGHT 2.0 is an enterprise-grade data and decision intelligence platform engineered across four foundational architectural planes: **Data Plane**, **Intelligence Plane**, **Governance Plane**, and **Experience Plane**. 
 
 Designed to reflect production architectures found in modern data companies, BIZINSIGHT transitions business analytics from ad-hoc queries into a governed, auditable, and resilient platform featuring **multi-source ingestion connectors, formal data contracts with quarantine gates, 6-dimension data quality scoring, centralized semantic metrics stores, governed text-to-SQL with AST validation, MLOps model registry & drift monitoring, digital twin scenario planning, and attribute-based access control (ABAC)**.

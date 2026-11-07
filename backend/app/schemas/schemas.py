@@ -115,3 +115,6 @@ class AskDataResponse(BaseModel):
     sources_used: List[str]
     confidence_explanation: str
     execution_time_ms: float
+    intent: Optional[str] = "AGGREGATE_DESCRIPTIVE"
+    key_insights: Optional[List[str]] = None
+    suggested_followups: Optional[List[str]] = None

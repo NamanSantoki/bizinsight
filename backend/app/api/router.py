@@ -30,7 +30,7 @@ from backend.app.analytics.stress_engine import run_dataset_stress_and_drift_aud
 from backend.app.ml.shap_engine import compute_shap_explainability
 from backend.app.analytics.goal_seek_engine import run_inverse_goal_seek
 from backend.app.audit.governance_report import generate_governance_pdf
-from backend.app.ai.ask_data import generate_sql_from_question, execute_safe_query, validate_sql_query
+from backend.app.ai.ask_data import generate_sql_from_question, execute_safe_query, validate_sql_query, generate_agentic_response
 from backend.app.audit.service import log_audit_event
 from backend.app.security.auth import get_current_user_optional, get_current_active_user
 
@@ -413,52 +413,15 @@ def ask_your_data(req: AskDataRequest, db: Session = Depends(get_db)):
             execution_time_ms=exec_time
         )
 
-    # Grounded answer generation strictly from query result rows
-    if not results or len(results) == 0:
-        answer = "The available dataset contains no matching records for this query."
-    else:
-        # Formulate grounded, clear, direct executive answer
-        first_row = results[0]
-        row_keys = list(first_row.keys())
-
-        def fmt_val(key: str, val: Any) -> str:
-            if val is None:
-                return "N/A"
-            if isinstance(val, (int, float)):
-                is_financial = any(m in key.lower() for m in ["revenue", "sales", "price", "cost", "amount", "profit"])
-                is_pct = any(m in key.lower() for m in ["rate", "margin", "ratio", "pct", "percent"])
-                if is_financial:
-                    return f"${val:,.2f}"
-                if is_pct and val < 1.0:
-                    return f"{val * 100:.1f}%"
-                if isinstance(val, float):
-                    return f"{val:,.2f}"
-                return f"{val:,}"
-            return str(val)
-
-        if len(results) == 1 and len(row_keys) == 1:
-            metric_label = row_keys[0].replace("_", " ").title()
-            formatted_val = fmt_val(row_keys[0], first_row[row_keys[0]])
-            answer = f"The {metric_label} is {formatted_val}."
-        elif len(results) == 1:
-            details = ", ".join([f"{k.replace('_', ' ').title()}: {fmt_val(k, v)}" for k, v in first_row.items()])
-            answer = f"Result: {details}."
-        elif len(row_keys) == 2 and ("group" in generated_sql.lower() or "order by" in generated_sql.lower()):
-            dim_key, val_key = row_keys[0], row_keys[1]
-            top_dim = first_row[dim_key]
-            top_val = fmt_val(val_key, first_row[val_key])
-            metric_label = val_key.replace("_", " ")
-            lines = [f"• {r[dim_key]}: {fmt_val(val_key, r[val_key])}" for r in results[:5]]
-            answer = (
-                f"{top_dim} leads with the highest {metric_label} at {top_val}.\n\n"
-                f"Full breakdown:\n" + "\n".join(lines)
-            )
-        elif len(results) <= 5:
-            lines = [f"• " + ", ".join([f"{k.replace('_', ' ').title()}: {fmt_val(k, v)}" for k, v in r.items()]) for r in results]
-            answer = f"Found {len(results)} matching records:\n" + "\n".join(lines)
-        else:
-            top_summary = ", ".join([f"{k.replace('_', ' ').title()}: {fmt_val(k, v)}" for k, v in first_row.items()])
-            answer = f"Returned {len(results)} records based on the executed query.\nTop record: {top_summary}."
+    # Grounded answer generation via Agentic Executive Synthesizer
+    agentic_res = generate_agentic_response(
+        question=req.question,
+        sql_query=generated_sql,
+        results=results or [],
+        table_name=table_name,
+        columns=columns,
+        exec_time_ms=exec_time
+    )
 
     # Audit log the AI natural language query
     log_audit_event(
@@ -474,9 +437,12 @@ def ask_your_data(req: AskDataRequest, db: Session = Depends(get_db)):
         sql_query=generated_sql,
         results=results,
         row_count=len(results) if results else 0,
-        answer=answer,
+        answer=agentic_res["answer"],
+        intent=agentic_res["intent"],
+        key_insights=agentic_res["key_insights"],
+        suggested_followups=agentic_res["suggested_followups"],
         sources_used=[table_name],
-        confidence_explanation="Deterministic SQL query strictly grounded in database schema and verified results.",
+        confidence_explanation="Agentic schema comprehension with strictly validated SQL execution.",
         execution_time_ms=exec_time
     )
 
