@@ -8,7 +8,7 @@ from backend.app.models.all_models import CompanyProfile, User
 from backend.app.schemas.company_schemas import (
     CompanyProfileCreate, CompanyProfileResponse, TaxonomyResponse, IndustryTaxonomyItem
 )
-from backend.app.security.auth import get_current_active_user
+from backend.app.security.auth import get_current_active_user, get_current_user_or_default
 from backend.app.audit.service import log_audit_event
 
 logger = logging.getLogger("bizinsight.company")
@@ -58,7 +58,7 @@ def get_taxonomies():
 @router.get("/profile", response_model=Optional[CompanyProfileResponse], summary="Get enterprise company DNA")
 def get_company_profile(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     """Retrieve the active enterprise company profile and macroeconomic risk DNA."""
     profile = db.query(CompanyProfile).first()
@@ -68,7 +68,7 @@ def get_company_profile(
 def upsert_company_profile(
     payload: CompanyProfileCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_user_or_default)
 ):
     """Create or update the organization's company profile.
     Automatically signs a tamper-proof SHA-256 block in the cryptographic audit ledger.

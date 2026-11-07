@@ -117,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <>
                 <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                 <span className="truncate max-w-[140px]">{companyProfile.organization_name}</span>
-                <span className="text-[10px] text-slate-400 font-normal">({companyProfile.industry_sector.split(' ')[0]})</span>
+                <span className="text-[10px] text-slate-400 font-normal">({(companyProfile.industry_sector || 'Enterprise').split(' ')[0]})</span>
               </>
             ) : (
               <>

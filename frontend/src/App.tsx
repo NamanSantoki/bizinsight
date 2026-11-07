@@ -415,7 +415,7 @@ export default function App() {
             <div className="space-y-6">
               {/* Executive Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {kpiData && Object.entries(kpiData.cards).map(([key, card]) => (
+                {kpiData?.cards && Object.entries(kpiData.cards).map(([key, card]) => (
                   <div key={key} className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-400">{card.label}</span>
@@ -435,7 +435,7 @@ export default function App() {
               </div>
 
               {/* Aggregate Trajectory Chart */}
-              {kpiData && kpiData.trends.length > 0 && (
+              {kpiData?.trends && kpiData.trends.length > 0 && (
                 <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                     <div>
@@ -482,7 +482,7 @@ export default function App() {
                   <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="text-sm font-bold text-slate-900 m-0">
-                        {kpiData.breakdowns.regions && kpiData.breakdowns.regions.length > 0 ? 'Geographic / Regional Distribution' : 'Categorical Distribution'}
+                        {kpiData?.breakdowns?.regions && kpiData.breakdowns.regions.length > 0 ? 'Geographic / Regional Distribution' : 'Categorical Distribution'}
                       </h3>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                         TOP 10
@@ -491,7 +491,7 @@ export default function App() {
                     <p className="text-xs text-slate-500 mb-4">Metric aggregation partitioned by top dimensional entities</p>
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={(kpiData.breakdowns.regions && kpiData.breakdowns.regions.length > 0) ? kpiData.breakdowns.regions : (kpiData.breakdowns.categories || [])}>
+                        <BarChart data={(kpiData?.breakdowns?.regions && kpiData.breakdowns.regions.length > 0) ? kpiData.breakdowns.regions : (kpiData?.breakdowns?.categories || [])}>
                           <CartesianGrid {...chartGrid} />
                           <XAxis 
                             dataKey="name" 
@@ -520,7 +520,7 @@ export default function App() {
                   <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="text-sm font-bold text-slate-900 m-0">
-                        {kpiData.distribution && kpiData.distribution.length > 0 ? 'Value Dispersion & Frequency Bins' : 'Category Partitioning'}
+                        {kpiData?.distribution && kpiData.distribution.length > 0 ? 'Value Dispersion & Frequency Bins' : 'Category Partitioning'}
                       </h3>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                         HISTOGRAM
@@ -528,7 +528,7 @@ export default function App() {
                     </div>
                     <p className="text-xs text-slate-500 mb-4">Statistical spread of observations across numeric tiers</p>
                     <div className="h-56">
-                      {kpiData.distribution && kpiData.distribution.length > 0 ? (
+                      {kpiData?.distribution && kpiData.distribution.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={kpiData.distribution}>
                             <CartesianGrid {...chartGrid} />
@@ -550,7 +550,7 @@ export default function App() {
                         </ResponsiveContainer>
                       ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={kpiData.breakdowns.categories || []}>
+                          <BarChart data={kpiData?.breakdowns?.categories || []}>
                             <CartesianGrid {...chartGrid} />
                             <XAxis 
                               dataKey="name" 
