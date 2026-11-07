@@ -51,7 +51,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     verifyAuditChain();
   }, [verifyAuditChain]);
 
-  const selectedDataset = datasets.find(d => d.id === selectedDatasetId);
+  const datasetList = Array.isArray(datasets) ? datasets : [];
+  const selectedDataset = datasetList.find(d => d.id === selectedDatasetId);
 
   return (
     <header className="h-16 shrink-0 bg-white border-b border-slate-200/90 px-3 sm:px-6 flex items-center justify-between z-10 shadow-2xs gap-2">
@@ -74,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onChange={(e) => onSelectDataset(Number(e.target.value))}
             className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1 max-w-[130px] xs:max-w-[180px] sm:max-w-xs truncate"
           >
-            {datasets.map((d) => (
+            {datasetList.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name} ({d.row_count.toLocaleString()} rows)
               </option>

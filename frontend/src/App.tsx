@@ -99,12 +99,14 @@ export default function App() {
     try {
       setLoading(true);
       const res = await apiClient.get<Dataset[]>('/datasets');
-      setDatasets(res.data);
-      if (res.data.length > 0 && !selectedDatasetId) {
-        setSelectedDatasetId(res.data[0].id);
+      const dataList = Array.isArray(res.data) ? res.data : [];
+      setDatasets(dataList);
+      if (dataList.length > 0 && !selectedDatasetId) {
+        setSelectedDatasetId(dataList[0].id);
       }
     } catch (err: any) {
       console.error(err);
+      setDatasets([]);
     } finally {
       setLoading(false);
     }
@@ -284,7 +286,8 @@ export default function App() {
     }
   };
 
-  const selectedDataset = datasets.find(d => d.id === selectedDatasetId);
+  const datasetList = Array.isArray(datasets) ? datasets : [];
+  const selectedDataset = datasetList.find(d => d.id === selectedDatasetId);
   const activeTabConfig = TAB_CONFIG.find(t => t.id === activeTab);
 
   /* ─── Elegant Light Theme Recharts configuration ─── */
@@ -313,7 +316,7 @@ export default function App() {
       {/* ═══════════════════════════ MAIN VIEWPORT ═══════════════════════════ */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         <Navbar
-          datasets={datasets}
+          datasets={datasetList}
           selectedDatasetId={selectedDatasetId}
           onSelectDataset={(id) => setSelectedDatasetId(id)}
           onFileUpload={handleFileUpload}
@@ -1049,7 +1052,7 @@ export default function App() {
                   <div className="pt-3 border-t border-amber-200/60 text-xs text-amber-800">
                     <span className="font-bold">Recommended Datasets with Sequential Temporal Axes:</span>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {datasets.filter(d => ['wti_crude_oil_daily_prices.csv', 'global_gdp_real.csv', 'international_airline_passengers.csv'].includes(d.name)).map(d => (
+                      {datasetList.filter(d => ['wti_crude_oil_daily_prices.csv', 'global_gdp_real.csv', 'international_airline_passengers.csv'].includes(d.name)).map(d => (
                         <button 
                           key={d.id} 
                           onClick={() => setSelectedDatasetId(d.id)}
@@ -1298,7 +1301,7 @@ export default function App() {
                   <div className="pt-3 border-t border-amber-200/60 text-xs text-amber-800">
                     <span className="font-bold">Recommended Multi-Variate Datasets for Causal Simulation:</span>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {datasets.filter(d => ['california_housing_census_kaggle.csv', 'diamonds_market_pricing.csv', 'supermarket_sales_real.csv', 'ecommerce_retail_sales.csv', 'titanic_real_passengers.csv'].includes(d.name)).map(d => (
+                      {datasetList.filter(d => ['california_housing_census_kaggle.csv', 'diamonds_market_pricing.csv', 'supermarket_sales_real.csv', 'ecommerce_retail_sales.csv', 'titanic_real_passengers.csv'].includes(d.name)).map(d => (
                         <button 
                           key={d.id} 
                           onClick={() => setSelectedDatasetId(d.id)}
@@ -1622,7 +1625,7 @@ export default function App() {
           {activeTab === 'analytics' && (
             <ExploratoryAnalyticsTab
               kpiData={kpiData}
-              datasetName={datasets.find(d => d.id === selectedDatasetId)?.name}
+              datasetName={selectedDataset?.name}
               onRefresh={() => selectedDatasetId && loadTabData('analytics', selectedDatasetId)}
             />
           )}
