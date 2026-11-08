@@ -71,6 +71,7 @@ data/processed/*
 !data/processed/.gitkeep
 ml/models/*
 !ml/models/.gitkeep
+backend/app/models/*_model/
 
 # Frontend build outputs & dependencies
 frontend/node_modules/

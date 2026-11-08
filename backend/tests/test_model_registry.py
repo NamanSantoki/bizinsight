@@ -28,11 +28,13 @@ def test_save_and_load_model(tmp_path: Path):
     assert meta["info"] == "test"
 
 def test_list_model_versions_orders(tmp_path: Path):
+    import time
     model_name = "versioned_model"
-    # Save two models with a short sleep to ensure timestamp order
+    # Save two models with a short sleep to ensure distinct timestamp order
     model1 = DummyModel(param=1)
     model2 = DummyModel(param=2)
     path1 = save_model(model_name, model1)
+    time.sleep(1.1)
     path2 = save_model(model_name, model2)
     versions = list_model_versions(model_name)
     # Versions are directory names; newest should be first
@@ -40,3 +42,4 @@ def test_list_model_versions_orders(tmp_path: Path):
     # Ensure the most recent version directory matches path2
     latest_dir = Path(path2).parent.name
     assert versions[0] == latest_dir
+
