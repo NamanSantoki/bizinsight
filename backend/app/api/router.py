@@ -386,14 +386,31 @@ def ask_your_data(req: AskDataRequest, db: Session = Depends(get_db)):
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
 
-    table_name = dataset.storage_table_name
-    if not table_name:
-        raise HTTPException(status_code=400, detail="Dataset is not indexed in queryable database.")
-
-    # Get table columns and schema
     df = load_dataset_dataframe(dataset)
-    columns = list(df.columns)
-    column_types = {str(c): str(df[c].dtype) for c in df.columns}
+    if df is None or df.empty:
+        raise HTTPException(status_code=400, detail="Dataset records could not be loaded from storage.")
+
+    table_name = dataset.storage_table_name
+    from sqlalchemy import inspect as sa_inspect
+    inspector = sa_inspect(engine)
+
+    if not table_name or not inspector.has_table(table_name):
+        table_name = sanitize_table_name(f"ds_{dataset.id}_{dataset.name}")
+        sql_df = df.copy()
+        sql_df.columns = [str(c).strip().replace(" ", "_").replace("-", "_") for c in sql_df.columns]
+        sql_df.to_sql(table_name, con=engine, if_exists="replace", index=False)
+        dataset.storage_table_name = table_name
+        db.commit()
+        db.refresh(dataset)
+
+    # Get actual table columns and schema from queryable table
+    inspector = sa_inspect(engine)
+    sql_cols = [c["name"] for c in inspector.get_columns(table_name)] if inspector.has_table(table_name) else []
+    columns = sql_cols if sql_cols else list(df.columns)
+    column_types = {str(c): "TEXT" for c in columns}
+    for c in columns:
+        if c in df.columns:
+            column_types[c] = str(df[c].dtype)
 
     start_time = pd.Timestamp.now()
     generated_sql = generate_sql_from_question(req.question, table_name, columns, column_types)

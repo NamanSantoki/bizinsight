@@ -366,11 +366,11 @@ def generate_sql_from_question(
         dim = target_dim or (cat_cols[0] if cat_cols else columns[0])
         agg_func = "AVG" if any(w in q_lower for w in ["average", "avg", "mean", "rate", "typical"]) else "SUM"
         agg_label = f"{agg_func.lower()}_{target_metric}"
-        return f'SELECT "{dim}", ROUND({agg_func}("{target_metric}"), 2) AS {agg_label} FROM "{table_name}"{where_clause} GROUP BY "{dim}" ORDER BY {agg_label} DESC LIMIT 10'
+        return f'SELECT "{dim}", ROUND(CAST({agg_func}("{target_metric}") AS numeric), 2) AS {agg_label} FROM "{table_name}"{where_clause} GROUP BY "{dim}" ORDER BY {agg_label} DESC LIMIT 10'
 
     # CASE C: Scalar Aggregations (Average, Min, Max, Sum)
     if any(w in q_lower for w in ["average", "avg", "mean", "typical"]):
-        return f'SELECT ROUND(AVG("{target_metric}"), 2) AS average_{target_metric} FROM "{table_name}"{where_clause}'
+        return f'SELECT ROUND(CAST(AVG("{target_metric}") AS numeric), 2) AS average_{target_metric} FROM "{table_name}"{where_clause}'
 
     if any(w in q_lower for w in ["maximum", "highest value", "peak value", "max "]):
         return f'SELECT MAX("{target_metric}") AS highest_{target_metric} FROM "{table_name}"{where_clause}'
@@ -379,7 +379,7 @@ def generate_sql_from_question(
         return f'SELECT MIN("{target_metric}") AS lowest_{target_metric} FROM "{table_name}"{where_clause}'
 
     if any(w in q_lower for w in ["total", "sum", "overall", "aggregate"]):
-        return f'SELECT ROUND(SUM("{target_metric}"), 2) AS total_{target_metric} FROM "{table_name}"{where_clause}'
+        return f'SELECT ROUND(CAST(SUM("{target_metric}") AS numeric), 2) AS total_{target_metric} FROM "{table_name}"{where_clause}'
 
     # CASE D: Count Inquiries ("how many", "count of", "number of")
     if any(w in q_lower for w in ["how many", "count", "number of", "records"]):
