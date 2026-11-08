@@ -3,7 +3,7 @@ import type { FormEvent, ChangeEvent } from 'react';
 import { 
   ShieldAlert, CheckCircle2, AlertTriangle, 
   RefreshCw, Clock, Sparkles, Download,
-  TrendingUp, ShieldCheck
+  TrendingUp, ShieldCheck, Database
 } from 'lucide-react';
 import { apiClient } from './services/api';
 import type { 
@@ -415,6 +415,25 @@ export default function App() {
 
           {/* ═══════════════ TAB: OVERVIEW & KPIS ═══════════════ */}
           {activeTab === 'overview' && (
+            !kpiData ? (
+              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-slate-200/80 shadow-xs text-center my-6">
+                <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4">
+                  <Database className="w-7 h-7" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1">No Active Dataset Selected</h3>
+                <p className="text-xs text-slate-500 max-w-md mb-6">
+                  Select an enterprise dataset from the top navigation dropdown or ingest a new CSV/Parquet file to generate automated executive KPIs, trends, and risk assessments.
+                </p>
+                {datasets.length > 0 && (
+                  <button
+                    onClick={() => setSelectedDatasetId(datasets[0].id)}
+                    className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                  >
+                    <span>Load {datasets[0].name}</span>
+                  </button>
+                )}
+              </div>
+            ) : (
             <div className="space-y-6">
               {/* Executive Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -600,6 +619,7 @@ export default function App() {
                 </div>
               )}
             </div>
+            )
           )}
 
           {/* ═══════════════ TAB: DATA QUALITY ENGINE ═══════════════ */}

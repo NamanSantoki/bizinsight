@@ -65,6 +65,11 @@ def seed_initial_users():
         db.close()
 
 seed_initial_users()
+try:
+    from backend.scripts.seed_db import seed_enterprise_data
+    seed_enterprise_data()
+except Exception as e:
+    logger.warning(f"Seed enterprise data warning: {e}")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
