@@ -130,6 +130,7 @@ def root():
     }
 
 @app.get("/health")
+@app.get("/healthz")
 @app.get(f"{settings.API_V1_STR}/health")
 def health_check():
     """Enterprise Health & Readiness Probe."""
